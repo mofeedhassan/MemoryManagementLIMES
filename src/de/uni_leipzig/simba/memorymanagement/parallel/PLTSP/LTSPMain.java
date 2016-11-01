@@ -62,6 +62,7 @@ public class LTSPMain {
 	static String resultsFolder="";// the results of the run
 	static String runsInfoFolder="";//where run information data are recorded in it
 	static String resultsFinalFolder="";//for extracting the required columns for plotting
+	static String currentDiroctory="";
 	static int whatToRun=0;// which part to run (2,1,0)=>(approach,baseline,both)
 	static int targetCol=1;
 	static double optimTime=100;
@@ -540,7 +541,7 @@ public class LTSPMain {
 	}
 	private static void initializeExperimentParameters(String fileName)
 	{
-		List<String> rawParameters = readFromFile(fileName);
+		List<String> rawParameters = readFromFile(currentDiroctory+fileName);
 		String split[];
 		for (String rawParameter : rawParameters) {
 			if(rawParameter.toLowerCase().startsWith("thresholds"))
@@ -573,7 +574,7 @@ public class LTSPMain {
 			else if(rawParameter.toLowerCase().startsWith("data"))
 			{
 				split = rawParameter.split(":");
-				dataFile = split[1];
+				dataFile = currentDiroctory + split[1];
 
 			}
 			else if(rawParameter.toLowerCase().startsWith("caches"))
@@ -587,12 +588,14 @@ public class LTSPMain {
 			{
 				split = rawParameter.split(":");
 				//resultsFile = split[1];
-				resultsFolder = split[1];
+				resultsFolder = currentDiroctory + split[1];
+				if(!resultsFolder.endsWith("/"))
+					resultsFolder+="/";
 			}	
 			else if(rawParameter.toLowerCase().startsWith("basefolder"))
 			{
 				split = rawParameter.split(":");
-				baseFolder = split[1];
+				baseFolder = currentDiroctory+split[1];
 				if(!baseFolder.endsWith("/"))
 					baseFolder+="/";
 
@@ -614,7 +617,9 @@ public class LTSPMain {
 			else if(rawParameter.toLowerCase().startsWith("infofolder"))
 			{
 				split = rawParameter.split(":");
-				runsInfoFolder=	split[1];
+				runsInfoFolder=	currentDiroctory + split[1];
+				if(!runsInfoFolder.endsWith("/"))
+					runsInfoFolder+="/";
 			}	
 			else if(rawParameter.toLowerCase().startsWith("part"))
 			{
@@ -730,8 +735,9 @@ public class LTSPMain {
 		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
 		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
 		Logger.getRootLogger().setLevel(Level.OFF);
-		resultsFolder = runsInfoFolder = resultsFinalFolder = System.getProperty("user.dir");
-		resultsFile = resultsFolder+"/Cache";
+		currentDiroctory = System.getProperty("user.dir");
+		currentDiroctory = standardizePath(currentDiroctory);
+		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDiroctory;
 
 		String option  = args[0];
 		if(option.equals("run"))
@@ -743,6 +749,7 @@ public class LTSPMain {
 			}
 			System.out.println("Starting run");
 			initializeExperimentParameters(args[1]);
+
 			resultsFolder = standardizePath(resultsFolder);
 			resultsFile=resultsFolder+"Cache";
 			displayRunParameters();
