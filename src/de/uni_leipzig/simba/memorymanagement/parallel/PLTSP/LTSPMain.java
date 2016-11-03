@@ -41,18 +41,15 @@ import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverType;
 import de.uni_leipzig.simba.memorymanagement.testTSPCaching.TSPCachingTester;
 
 public class LTSPMain {
-	/**
-	 * logger
-	 */
 	static Logger log = Logger.getLogger(TSPCachingTester.class.getName());
 
-	static List<Double> thresholds= new ArrayList<Double>();
-	static List<Integer> capcities= new ArrayList<Integer>();
+	static List<Double> thresholds= new ArrayList<>();
+	static List<Integer> capacities= new ArrayList<>();
 	static List<String> caches= new ArrayList<String>();
 	static List<String> clusters= new ArrayList<String>();
 	static List<String> solvers= new ArrayList<String>();
 
-	static List<String> runingInfo= new ArrayList<String>();// storing running times for each section of code: indexer, clustering, TSP, caching
+	static List<String> runningInfo= new ArrayList<String>();// storing running times for each section of code: indexer, clustering, TSP, caching
 	static String InfoPiece="";//piece of run information
 
 	static int repeats=5;// number of repetitions
@@ -62,8 +59,9 @@ public class LTSPMain {
 	static String resultsFolder="";// the results of the run
 	static String runsInfoFolder="";//where run information data are recorded in it
 	static String resultsFinalFolder="";//for extracting the required columns for plotting
-	static String currentDiroctory="";
+	static String currentDirectory="";
 	static int whatToRun=0;// which part to run (2,1,0)=>(approach,baseline,both)
+	
 	static int targetCol=1;
 	static double optimTime=100;
 	static int numberOfProcessors =0;
@@ -88,7 +86,7 @@ public class LTSPMain {
 		System.out.println("Folder for steps run times: "+runsInfoFolder);
 		System.out.println("Record steps times (y/n): "+recordTimes);
 		System.out.println("Thresholds: "+thresholds);
-		System.out.println("Capacities: "+capcities);
+		System.out.println("Capacities: "+capacities);
 		System.out.println("Clusters: "+clusters);
 		System.out.println("Solvers: "+solvers);
 		System.out.println("Optimization Time: "+optimTime);
@@ -104,7 +102,7 @@ public class LTSPMain {
 			originalPath+="/";
 		return originalPath;
 	}
-	private static void runExperiemment()
+	private static void runExperiment()
 	{
 		long begin=0,end=0,InfoBegin=0;
 		long parallelBegin=0;
@@ -135,8 +133,8 @@ public class LTSPMain {
 						//String titles="What\tCapacity\tIndexing\tGraph\tClustering\tClustersNo\tPath\tPlan\tMappings\tPlanExec\n";
 //method name + information common={capcaity+indexing time + graph creation}+clustering+ #clusters + path-creation + parallel-plan-creation + paralelization-time +mappings+ total time
 						String titles="What\tCapacity\tIndexing\tGraph\tClustering\t#Clusters\tPath\tPlan\tParallel-Run\t#hits\t#misses\tavg_thread_time\t#mappings\tTotal Run\n";
-						runingInfo.add(titles);
-						for (Integer capacity : capcities) {// pick a capacity
+						runningInfo.add(titles);
+						for (Integer capacity : capacities) {// pick a capacity
 							String line="";
 							for(int i=0; i< repeats; i++)// do the repeats
 							{
@@ -186,7 +184,7 @@ public class LTSPMain {
 											System.out.println(titles);
 											System.out.println(InfoPiece);
 										}
-										runingInfo.add(InfoPiece);
+										runningInfo.add(InfoPiece);
 										System.out.println("Capacity\tRuntime\tHits\tMisses");
 										System.out.print("Baseline (" + capacity + ")\t");
 										System.out.print((end - begin) + "\t");
@@ -237,7 +235,7 @@ public class LTSPMain {
 										pc.clustersIds = path;
 
 										//Set the cache if it is shared or not
-										pc.setCacheSharing(true);
+										pc.setCacheSharing(false);
 
 										parallelBegin = System.currentTimeMillis();
 										//Run the parallel controller
@@ -286,7 +284,7 @@ public class LTSPMain {
 											System.out.println(titles);
 											System.out.println(InfoPiece);
 										}
-										runingInfo.add(InfoPiece);
+										runningInfo.add(InfoPiece);
 										InfoPiece="";
 										/////////////////////overall info
 										if(whatToRun == 2)
@@ -349,7 +347,7 @@ public class LTSPMain {
 											System.out.println(titles);
 											System.out.println(InfoPiece);
 										}										
-										runingInfo.add(InfoPiece);
+										runningInfo.add(InfoPiece);
 										System.out.println("Capacity\tRuntime\tHits\tMisses");
 
 										System.out.print("Baseline (" + capacity + ")\t");
@@ -442,7 +440,7 @@ public class LTSPMain {
 											System.out.println(titles);
 											System.out.println(InfoPiece);
 										}										
-										runingInfo.add(InfoPiece);
+										runningInfo.add(InfoPiece);
 										InfoPiece="";
 
 										/////////////////////overall info
@@ -467,9 +465,9 @@ public class LTSPMain {
 						System.out.println(resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster);
 
 						if(recordTimes)
-							wrtieToFile(runingInfo,runsInfoFolder+typeLabel+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver);
+							wrtieToFile(runningInfo,runsInfoFolder+typeLabel+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver);
 						wrtieToFile(results,resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver+typeLabel);
-						runingInfo.clear();
+						runningInfo.clear();
 					}//thresholds
 				}//caches
 			}//solver
@@ -541,7 +539,7 @@ public class LTSPMain {
 	}
 	private static void initializeExperimentParameters(String fileName)
 	{
-		List<String> rawParameters = readFromFile(currentDiroctory+fileName);
+		List<String> rawParameters = readFromFile(currentDirectory+fileName);
 		String split[];
 		for (String rawParameter : rawParameters) {
 			if(rawParameter.toLowerCase().startsWith("thresholds"))
@@ -557,7 +555,7 @@ public class LTSPMain {
 				int max = Integer.parseInt(split[2]);
 				int factor = Integer.parseInt(split[3]);
 				for(int i=min;i<=max;i*=factor)
-					capcities.add(i);
+					capacities.add(i);
 			}
 			else if(rawParameter.toLowerCase().startsWith("repeats"))
 			{
@@ -574,7 +572,7 @@ public class LTSPMain {
 			else if(rawParameter.toLowerCase().startsWith("data"))
 			{
 				split = rawParameter.split(":");
-				dataFile = currentDiroctory + split[1];
+				dataFile = currentDirectory + split[1];
 
 			}
 			else if(rawParameter.toLowerCase().startsWith("caches"))
@@ -588,14 +586,14 @@ public class LTSPMain {
 			{
 				split = rawParameter.split(":");
 				//resultsFile = split[1];
-				resultsFolder = currentDiroctory + split[1];
+				resultsFolder = currentDirectory + split[1];
 				if(!resultsFolder.endsWith("/"))
 					resultsFolder+="/";
 			}	
 			else if(rawParameter.toLowerCase().startsWith("basefolder"))
 			{
 				split = rawParameter.split(":");
-				baseFolder = currentDiroctory+split[1];
+				baseFolder = currentDirectory+split[1];
 				if(!baseFolder.endsWith("/"))
 					baseFolder+="/";
 
@@ -617,7 +615,7 @@ public class LTSPMain {
 			else if(rawParameter.toLowerCase().startsWith("infofolder"))
 			{
 				split = rawParameter.split(":");
-				runsInfoFolder=	currentDiroctory + split[1];
+				runsInfoFolder=	currentDirectory + split[1];
 				if(!runsInfoFolder.endsWith("/"))
 					runsInfoFolder+="/";
 			}	
@@ -646,7 +644,7 @@ public class LTSPMain {
 	}
 	private static void displayParameters()
 	{
-		for (Integer capacity : capcities) {
+		for (Integer capacity : capacities) {
 			System.out.println(capacity);
 		}
 		for (Double threshold : thresholds) {
@@ -735,9 +733,9 @@ public class LTSPMain {
 		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
 		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
 		Logger.getRootLogger().setLevel(Level.OFF);
-		currentDiroctory = System.getProperty("user.dir");
-		currentDiroctory = standardizePath(currentDiroctory);
-		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDiroctory;
+		currentDirectory = System.getProperty("user.dir");
+		currentDirectory = standardizePath(currentDirectory);
+		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDirectory;
 
 		String option  = args[0];
 		if(option.equals("run"))
@@ -753,7 +751,7 @@ public class LTSPMain {
 			resultsFolder = standardizePath(resultsFolder);
 			resultsFile=resultsFolder+"Cache";
 			displayRunParameters();
-			runExperiemment();
+			runExperiment();
 		}
 		else if(option.equals("extract"))
 		{
@@ -775,7 +773,7 @@ public class LTSPMain {
 			wrtieToFile(res, resultsFinalFolder+"/"+resultsFiles.get(targetCol));
 		}
 		else
-			System.out.println("Wrong operation option (run/exract)");
+			System.out.println("Wrong operation option (run/extract)");
 
 	}
 

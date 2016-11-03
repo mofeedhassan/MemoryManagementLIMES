@@ -37,7 +37,7 @@ public class LTSPController {
 	Measure measure=null;
 	//The number of processors that controls the process of creation of the threads of ParallelRunner class
 	private static int numberOfProcessors = Runtime.getRuntime().availableProcessors(); //lock as common (updates after finish and when start
-	private static ExecutorService pool = null;
+	private static final ExecutorService pool =  Executors.newFixedThreadPool(getNumberOfProcessors());
 	private /*static*/ Map<Integer,String> resultsCollector = new HashMap<Integer, String>();
 	
 	public int[] clustersIds=null;
@@ -47,7 +47,6 @@ public class LTSPController {
     int numberOfMappings=0; //lock as common when update the number of mappings
     Map<Integer,Double> runTimes = new HashMap<Integer, Double>(); //lock as common when update the runtimes
     static LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands = new LinkedHashMap<Integer, List<DataManipulationCommand>>();
-    private int clusterId=0;
     
 	public /*static*/ List<String> results = new ArrayList<String>();
 	public /*static*/ List<String> cacheHitsValues = new ArrayList<String>();
@@ -84,8 +83,7 @@ public class LTSPController {
 		this.indexer = indexer;
 		this.measure=measure;
 		this.threshold=threshold;
-		this.shared=shared;
-		pool =  Executors.newFixedThreadPool(getNumberOfProcessors()); 
+		this.shared=shared; 
 	}
 	
 	LinkedHashMap<Integer,List<DataManipulationCommand>> getClustersCommands() {
@@ -152,7 +150,9 @@ public class LTSPController {
 		
 		if(NrProcessors > 0)
 		{
-			while(true)
+			List<Future<String>> futures = new ArrayList<>();
+			
+			for(int clusterId = 0; clusterId < clustersCommands.size();clusterId++)
 			{
 /*				if(checkFreeProcessor()) // there is free processor
 				{*/
@@ -163,24 +163,23 @@ public class LTSPController {
 					List<DataManipulationCommand> commands  = clustersCommands.get(currentCluster/*clusterId*/);//get a cluster's commands set
 					LTSPTask task = new LTSPTask(getCache(), commands, measure, threshold, indexer);// crate a task and assign the commands set and the cache
 					task.setClusterId(clusterId++);
+					futures.add(pool.submit(task));//send to parallelism
 					
-					Future<String> taskResult = pool.submit(task);//send to parallelism
-					
-					try {
-						results.add(taskResult.get());//add the task as clusterId,threadRunTime,mappings
-						cacheHitsValues.add(String.valueOf(cache.getHits())); //#hits when the thread executes in this moment (not total)
-						cacheMissesValues.add(String.valueOf(cache.getMisses())); //#misses when the thread executes in this moment (not total)
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					} catch (ExecutionException e) {
-						e.printStackTrace();
-					}
 					//System.out.println("#Threads "+Thread.getAllStackTraces().keySet().size());
 					//updateNoProcessors('-');// the controller decrements the number of processors when thread started
-					if(clusterId == clustersCommands.size())
-						break;
-/*				}
-*/			}
+				//}
+			}
+
+			for(Future<String> future: futures)
+			{
+				try
+				{
+					results.add(future.get());//add the task as clusterId,threadRunTime,mappings
+					cacheHitsValues.add(String.valueOf(cache.getHits())); //#hits when the thread executes in this moment (not total)
+					cacheMissesValues.add(String.valueOf(cache.getMisses())); //#misses when the thread executes in this moment (not total)
+				}
+				catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+			}			
 			pool.shutdown(); 
 		}
 	}

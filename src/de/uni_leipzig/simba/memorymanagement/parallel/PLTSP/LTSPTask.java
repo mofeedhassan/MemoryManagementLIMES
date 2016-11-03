@@ -41,9 +41,6 @@ public class LTSPTask implements Callable<String>{
 		this.indexer=indexer;
 	}
 
-	public static void main(String[] args) {
-		
-	}
 	int getClusterId() {
 		return clusterId;
 	}
@@ -52,7 +49,6 @@ public class LTSPTask implements Callable<String>{
 	}
 	@Override
 	public String call() throws Exception {//what runs for each thread
-
 		CacheAccessExecution cae = new CacheAccessExecution(cache, commands, measure, threshold, indexer);
 		//ParallelController.updateNoProcessors('+');// increments the number of processors as it frees one
 		//count++;//count the threads number
