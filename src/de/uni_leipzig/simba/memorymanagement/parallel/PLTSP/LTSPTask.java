@@ -62,6 +62,7 @@ public class LTSPTask implements Callable<String>{
 	public String call() throws Exception {//what runs for each thread
 		
 		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":call():start thread action:"+ System.currentTimeMillis());
+
 		CacheAccessExecution cae = new CacheAccessExecution(cache, commands, measure, threshold, indexer);
 		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":call():initialize cache"+ System.currentTimeMillis());
 

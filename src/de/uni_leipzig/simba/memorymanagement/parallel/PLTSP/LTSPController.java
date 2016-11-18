@@ -51,8 +51,8 @@ public class LTSPController {
 	// The measure used for comparisons
 	Measure measure=null;
 	//The number of processors that controls the process of creation of the threads of ParallelRunner class
-	private static int numberOfProcessors = Runtime.getRuntime().availableProcessors(); //lock as common (updates after finish and when start
-	private static final ExecutorService pool =  Executors.newFixedThreadPool(getNumberOfProcessors());
+	private static int numberOfProcessors = Runtime.getRuntime().availableProcessors(); //default value
+	private static ExecutorService pool =  Executors.newFixedThreadPool(getNumberOfProcessors());
 	private /*static*/ Map<Integer,String> resultsCollector = new HashMap<Integer, String>();
 	
 	public int[] clustersIds=null;
@@ -91,15 +91,16 @@ public class LTSPController {
      * @param measure The similarity measure used in computing the mappings. It is either Euclidean or  
      * @param threshold The threshold
      */
-	public LTSPController(LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands,String cache,int capacity,Indexer indexer, Measure measure,Double threshold, boolean shared){
+	public LTSPController(LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands,String cache,int capacity,Indexer indexer, Measure measure,Double threshold, boolean shared,int NoProcessors){
 		this.clustersCommands=clustersCommands;		// it is static but each time in the constructor it is assigned to new set of commands for the new repeat
 		this.cacheName = cache;
 		this.capacity = capacity;
 		this.indexer = indexer;
 		this.measure=measure;
 		this.threshold=threshold;
-		this.shared=shared; 
-       
+		this.shared=shared;
+		numberOfProcessors =NoProcessors;
+		pool = Executors.newFixedThreadPool(numberOfProcessors);
 	}
 	
 	LinkedHashMap<Integer,List<DataManipulationCommand>> getClustersCommands() {

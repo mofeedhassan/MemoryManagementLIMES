@@ -50,7 +50,10 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 public class LTSPMain {
-	static Logger logger = Logger.getLogger(TSPCachingTester.class.getName());
+	//static Logger log = Logger.getLogger(TSPCachingTester.class.getName());
+	static Logger logger = Logger.getLogger("LIMES"); 
+
+
 
 	static List<Double> thresholds= new ArrayList<>();
 	static List<Integer> capacities= new ArrayList<>();
@@ -73,7 +76,7 @@ public class LTSPMain {
 	
 	static int targetCol=1;
 	static double optimTime=100;
-	static int numberOfProcessors =0;
+	static int numberOfProcessors =Runtime.getRuntime().availableProcessors();
 
 	static boolean recordTimes =false;
 	static boolean displayOnce =false;
@@ -240,7 +243,7 @@ public class LTSPMain {
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
 
 										///////////////////////////// create parallel controller
-										LTSPController pc = new LTSPController(parallePlan,cache,capacity, hr3,new EuclideanMetric(), threshold,true);
+										LTSPController pc = new LTSPController(parallePlan,cache,capacity, hr3,new EuclideanMetric(), threshold,true,numberOfProcessors);
 										pc.clustersIds = path;
 
 										//Set the cache if it is shared or not
@@ -405,7 +408,7 @@ public class LTSPMain {
 										parallePlan = parralelPlanner.plan(clusters, path);
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
 										///////////////////////////// create parallel controller
-										LTSPController pc = new LTSPController(parallePlan,cache,capacity, tix,new TrigramMeasure(), threshold,true);
+										LTSPController pc = new LTSPController(parallePlan,cache,capacity, tix,new TrigramMeasure(), threshold,true,numberOfProcessors);
 
 										//Set the cache if it is shared or not
 										pc.setCacheSharing(true);
@@ -648,7 +651,13 @@ public class LTSPMain {
 				split = rawParameter.split(":");
 				iterations=	Integer.parseInt(split[1]);
 			}
-
+			else if(rawParameter.toLowerCase().startsWith("core"))
+			{
+				split = rawParameter.split(":");
+				if(Integer.parseInt(split[1]) < numberOfProcessors)
+						numberOfProcessors = Integer.parseInt(split[1]);
+			}
+				
 		}
 	}
 	private static void displayParameters()
@@ -741,6 +750,7 @@ public class LTSPMain {
 	public static void main(String[] args) {
 		/*Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
 		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
+<<<<<<< HEAD
 		Logger.getRootLogger().setLevel(Level.OFF);*/
 		
          Handler fileHandler  = null;
@@ -760,6 +770,7 @@ public class LTSPMain {
  			logger.log(Level.SEVERE, "Error occur in FileHandler.", exception);
  		}
 		
+
 		currentDirectory = System.getProperty("user.dir");
 		currentDirectory = standardizePath(currentDirectory);
 		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDirectory;
