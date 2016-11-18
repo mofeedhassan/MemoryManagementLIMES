@@ -1,0 +1,15 @@
+data:lgd1k.csv
+results:resultsTSPHR3
+baseFolder:baseFolder
+caches:FIFOSimple
+clusters:SimpleEdge
+optimTime:250
+solvers:SortingSolver
+iterations:0
+thresholds:0.95
+capacities:100:100:2
+infoFolder:HR3Info
+part:2
+recordTimes:true
+repeats:1
+type:integer

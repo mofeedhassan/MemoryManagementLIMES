@@ -9,9 +9,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.FileHandler;
 
 import org.apache.log4j.Logger;
+
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.SimpleFormatter;
 
 import de.uni_leipzig.simba.memorymanagement.indexing.IndexItem;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
@@ -28,6 +36,7 @@ public abstract class AbstractCache implements DataCache {
      * logger
      */
     public static Logger log4j = Logger.getLogger(AbstractCache.class);
+    static java.util.logging.Logger logger = java.util.logging.Logger.getLogger("LIMES");
 
     /**
      * cache
@@ -59,6 +68,7 @@ public abstract class AbstractCache implements DataCache {
     int capacity;//max number of resources to store in the cache
 
 
+    public AbstractCache(){m_evictCount=0; m_cacheMaxSize=0;}
     /**
      *
      * @param size
@@ -106,7 +116,7 @@ public abstract class AbstractCache implements DataCache {
      * @return the value or null
      */
 
-    public synchronized Cache  get(IndexItem key, Indexer indexer) {//changed from 
+    public Cache  get(IndexItem key, Indexer indexer) {//changed from 
 
         Object value = m_cacheMap.get(key);
         if (value != null)// that is hit
@@ -125,35 +135,55 @@ public abstract class AbstractCache implements DataCache {
             value = m_cacheMap.get(key);// after it is added
         }
 
-/*        if (log4j.isDebugEnabled()) {
-            if (value != null) {
-                log4j.debug("hit:" + key.toString());
-            } else {
-                log4j.debug("miss: " + key.toString());
-            }
-        }*/
-
-       // return new MemoryCache();
         return (Cache)value; ////cast the retrieved object to unbox the cache required
     }
-    //////////////////////
-     public synchronized Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
+    ////////////////////// HERE IS THE USED GET IN PARALLELIZATION/////////////////////
+     public  Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
+
+ 		logger.info(Thread.currentThread().getName()+getClass().getName()+" check value existence in cache Map in get() "+System.currentTimeMillis());
 
         Object value = m_cacheMap.get(key);
-        if (value == null)// that is hit
- 
-        {
-            put(key, indexer.get(key));// put the IndexItem and its values from the indexer
-            value = m_cacheMap.get(key);// after it is added
+        if (value == null)// that is miss
+         {
+       		logger.info(Thread.currentThread().getName()+getClass().getName()+" #misses "+m_misses+" " +System.currentTimeMillis());
+        	Object tmp = null;
+     		logger.info(Thread.currentThread().getName()+getClass().getName()+" value not exist in cache Map in get() "+System.currentTimeMillis());
+        	synchronized(m_cacheMap)
+        	{
+         		logger.info(Thread.currentThread().getName()+getClass().getName()+" lock cache Map in get() "+System.currentTimeMillis());
+        		tmp = m_cacheMap.get(key);
+        		if(tmp==null)
+        			put(key, indexer.get(key));// put the IndexItem and its values from the indexer
+         		logger.info(Thread.currentThread().getName()+getClass().getName()+" finished put value in cache Map in get() using put "+System.currentTimeMillis());
+
+        	}
+               value = m_cacheMap.get(key);// after it is added
         }
+        else
+       		logger.info(Thread.currentThread().getName()+getClass().getName()+" #hits "+m_hits+" " +System.currentTimeMillis());
+
         //notifyAll();
+  		logger.info(Thread.currentThread().getName()+getClass().getName()+" returns the required value in get " +System.currentTimeMillis());
+
         return (Cache)value; ////cast the retrieved object to unbox the cache required
     }
+     
+/*     public  Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
+
+         Object value = m_cacheMap.get(key);
+         if (value == null)// that is miss
+          {
+                put(key, indexer.get(key));// put the IndexItem and its values from the indexer
+                 value = m_cacheMap.get(key);// after it is added
+         }
+         //notifyAll();
+         return (Cache)value; ////cast the retrieved object to unbox the cache required
+     }*/
 
     /**
      * @return the specified size of the cache
      */
-     public synchronized int maxSize() {
+     public int maxSize() {
         return m_cacheMaxSize;
     }
 
@@ -168,29 +198,84 @@ public abstract class AbstractCache implements DataCache {
      * @return null if it was first time to be in the cache or the previously
      * and replaced values associated to this key
      */
-     public synchronized Object put(Object key, Object val) {
+     public Object put(Object key, Object val) {
     	IndexItem removed= null;
         if (m_cacheMaxSize > 0) {
  //           log4j.info("put"+currentSize+"+"+((IndexItem) key).getSize()+"<>"+ capacity);
+     		logger.info(Thread.currentThread().getName()+getClass().getName()+" cache Map is full "+System.currentTimeMillis());
+     		
+     		Integer tmpCurrentSize = new Integer(currentSize);
+   		
             int hypercubeSize= ((IndexItem) key).getSize();
-        	 while ((currentSize + hypercubeSize) > capacity) {
+            
+            
+            synchronized(tmpCurrentSize)
+            {
+        	 while ((tmpCurrentSize + hypercubeSize) > capacity) {
+           		logger.info(Thread.currentThread().getName()+getClass().getName()+" currentsize vs capacity "+tmpCurrentSize+":"+capacity +System.currentTimeMillis());
+          		logger.info(Thread.currentThread().getName()+getClass().getName()+" begin evict an item from cache Map -> evict() "+System.currentTimeMillis());
         		 removed = (IndexItem)evict();
   //               log4j.info("EVICT "+removed);
-        		 if(removed!=null)// for cases like FIFO2Chance if it is not removed for a second chance it will return null
-        			 currentSize = currentSize - removed.getSize();
+        		 if(removed!=null) // for cases like FIFO2Chance if it is not removed for a second chance it will return null
+        			 //currentSize = currentSize - removed.getSize();
+        			 tmpCurrentSize = tmpCurrentSize - removed.getSize();
+
+          		logger.info(Thread.currentThread().getName()+getClass().getName()+" reduce size after eviction in put() cache current size= " +tmpCurrentSize+" :" +System.currentTimeMillis());
+
              }
             putAccess(key);//just to update the accessibility key map order based on the cache strategy
 
-            // debug info
-/*            if (log4j.isDebugEnabled()) {
-                log4j.debug("put:" + key.toString());
-            }*/
-            currentSize = currentSize + ((IndexItem)key).getSize();
-            return m_cacheMap.put(key, val);//add the object as key and value to the cache 
+
+            //currentSize = currentSize + ((IndexItem)key).getSize();
+            currentSize = tmpCurrentSize + ((IndexItem)key).getSize();
+            
+            }
+      		logger.info(Thread.currentThread().getName()+getClass().getName()+" increase size after add in put= " +currentSize+" :" +System.currentTimeMillis());
+       		return m_cacheMap.put(key, val);//add the object as key and value to the cache
+
         }
         return null;
     }
+     
+     private ConcurrentMap<Integer, Integer> currentSizeSynch = new ConcurrentHashMap<Integer, Integer>();
 
+     private Object getCacheSyncObject(final Integer id) {
+    	 currentSizeSynch.putIfAbsent(id, id);
+    	  return currentSizeSynch.get(id);
+    	}
+     
+ /*    public Object put(Object key, Object val) {
+     	IndexItem removed= null;
+         if (m_cacheMaxSize > 0) {
+  //           log4j.info("put"+currentSize+"+"+((IndexItem) key).getSize()+"<>"+ capacity);
+      		logger.info(Thread.currentThread().getName()+" cache Map is full "+System.currentTimeMillis());
+      		
+             int hypercubeSize= ((IndexItem) key).getSize();
+             
+         	 while ((currentSize+ hypercubeSize) > capacity) {
+            		logger.info(Thread.currentThread().getName()+" currentsize vs capacity "+currentSize+":"+capacity +System.currentTimeMillis());
+           		logger.info(Thread.currentThread().getName()+" begin evict an item from cache Map -> evict() "+System.currentTimeMillis());
+         		 removed = (IndexItem)evict();
+   //               log4j.info("EVICT "+removed);
+         		// if(removed!=null) for cases like FIFO2Chance if it is not removed for a second chance it will return null
+         			 currentSize = currentSize - removed.getSize();
+           		logger.info(Thread.currentThread().getName()+" reduce size after eviction in put() cache current size= " +currentSize+" :" +System.currentTimeMillis());
+
+              }
+             putAccess(key);//just to update the accessibility key map order based on the cache strategy
+
+
+             currentSize = currentSize + ((IndexItem)key).getSize();
+             
+             
+
+       		logger.info(Thread.currentThread().getName()+" increase size after add in put= " +currentSize+" :" +System.currentTimeMillis());
+
+       		return m_cacheMap.put(key, val);//add the object as key and value to the cache
+
+         }
+         return null;
+     }*/
     /**
      * It removes specific value from the cache
      *
@@ -198,6 +283,8 @@ public abstract class AbstractCache implements DataCache {
      * @return list of values removed already from the cache
      */
      public synchronized List<Object> removeValues(Object key) {
+   		logger.info(Thread.currentThread().getName()+getClass().getName()+" removesAllValues " +System.currentTimeMillis());
+
     	List<Object> removed = new ArrayList<Object>();
     	int hypercubeSize= ((IndexItem) key).getSize();
 
@@ -224,7 +311,7 @@ public abstract class AbstractCache implements DataCache {
      * @param key
      * @return true if exist false otherwise
      */
-     public synchronized boolean contains(Object key) {
+     public boolean contains(Object key) {
         if (m_cacheMap.keySet().contains(key)) {
             return true;
         }
@@ -235,7 +322,7 @@ public abstract class AbstractCache implements DataCache {
      * @return the size of the current cache (number of elements currently
      * exist)
      */
-     public synchronized int size() {
+     public int size() {
         return m_cacheMap.size();
     }
 
@@ -247,11 +334,11 @@ public abstract class AbstractCache implements DataCache {
      *
      * @return collection of current values in cache
      */
-    public synchronized Collection<Object> values() {
+    public Collection<Object> values() {
         return m_cacheMap.values();
     }
 
-    public synchronized Collection<Object> keys() {
+    public Collection<Object> keys() {
         return m_cacheMap.keySet();
     }
 

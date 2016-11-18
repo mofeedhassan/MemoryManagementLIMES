@@ -23,7 +23,7 @@ public class FifoCache extends AbstractCache{
 	}
 
 	@Override
-	public synchronized Cache getData(IndexItem index, Indexer indexer){
+	public Cache getData(IndexItem index, Indexer indexer){
 		return super.get(index, indexer);
 	}
 
@@ -35,12 +35,12 @@ public class FifoCache extends AbstractCache{
 	}
 
 	@Override
-	public synchronized int getHits() {
+	public int getHits() {
 		return m_hits;
 	}
 
 	@Override
-	public synchronized int getMisses() {
+	public int getMisses() {
 		return m_misses;
 	}
 
@@ -51,28 +51,29 @@ public class FifoCache extends AbstractCache{
 	}
 
 	@Override
-	protected synchronized Object evict() {
+	protected /*synchronized*/ Object evict() {
 		Object removed =null;
         for (int i = 0; i < m_evictCount && !m_access.isEmpty(); i++) {
             removed = m_access.poll();
+     		//logger.debug(Thread.currentThread().getName()+" evicts cache Map for the ith "+ i +System.currentTimeMillis());
             m_cacheMap.remove(removed);
         }	
         return removed;
 	}
 
 	@Override
-	protected  synchronized void putAccess(Object key) {
+	protected  /*synchronized*/ void putAccess(Object key) {
         m_access.add(key);		
 	}
     @Override
-    public  synchronized List<Object> removeValues(Object value) {
+    public  List<Object> removeValues(Object value) {
         List<Object> remove = super.removeValues(value);
         m_access.removeAll(remove);
         return remove;
     }
     
     @Override
-    public  synchronized boolean test() {
+    public  boolean test() {
         if (size() > m_cacheMaxSize || m_access.size() > size() || m_access.size() > m_cacheMaxSize)
             return false;
         return true;
