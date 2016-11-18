@@ -3,6 +3,13 @@ package de.uni_leipzig.simba.memorymanagement.parallel.PLTSP;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+/*import org.apache.log4j.Logger;*/
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import org.matheclipse.core.reflection.system.Trace;
 
 import de.uni_leipzig.simba.data.Mapping;
@@ -15,6 +22,7 @@ import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
 import de.uni_leipzig.simba.memorymanagement.parallel.ParallelController;
 
 public class LTSPTask implements Callable<String>{
+	static java.util.logging.Logger logger = Logger.getLogger("LIMES"); 
 	private int clusterId;
 	private static int count=0;
 	/////////////////////////
@@ -30,7 +38,10 @@ public class LTSPTask implements Callable<String>{
 	    List<DataManipulationCommand> commands =null;
 	/////////////////////////    
 	
-	public LTSPTask(){}
+	public LTSPTask(){
+
+
+	}
 	public LTSPTask(int i){this.setClusterId(i);}
 	public LTSPTask(DataCache c, List<DataManipulationCommand> commands, Measure measure, double threshold, Indexer indexer)
 	{
@@ -49,7 +60,11 @@ public class LTSPTask implements Callable<String>{
 	}
 	@Override
 	public String call() throws Exception {//what runs for each thread
+		
+		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":call():start thread action:"+ System.currentTimeMillis());
 		CacheAccessExecution cae = new CacheAccessExecution(cache, commands, measure, threshold, indexer);
+		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":call():initialize cache"+ System.currentTimeMillis());
+
 		//ParallelController.updateNoProcessors('+');// increments the number of processors as it frees one
 		//count++;//count the threads number
 		//System.out.println("Nr. threads "+count);

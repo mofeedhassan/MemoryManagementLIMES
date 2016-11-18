@@ -1,5 +1,6 @@
 package de.uni_leipzig.simba.memorymanagement.parallel.PLTSP;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -9,6 +10,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.SimpleFormatter;
+
+/*import org.apache.log4j.Level;
+import org.apache.log4j.Logger;*/
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import de.uni_leipzig.simba.data.Mapping;
 import de.uni_leipzig.simba.measures.Measure;
@@ -21,6 +35,7 @@ import de.uni_leipzig.simba.memorymanagement.parallel.ParallelController;
 import de.uni_leipzig.simba.memorymanagement.parallel.ParallelRunner;
 
 public class LTSPController {
+	static Logger logger = Logger.getLogger("LIMES"); 
 
 	////////////////////////////////////////////////    INPUTS   /////////////////////////////////
 	
@@ -84,6 +99,7 @@ public class LTSPController {
 		this.measure=measure;
 		this.threshold=threshold;
 		this.shared=shared; 
+       
 	}
 	
 	LinkedHashMap<Integer,List<DataManipulationCommand>> getClustersCommands() {
@@ -151,7 +167,7 @@ public class LTSPController {
 		if(NrProcessors > 0)
 		{
 			List<Future<String>> futures = new ArrayList<>();
-			
+			logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":runParallelTasks() with Load:start threadsloop:"+ System.currentTimeMillis());
 			for(int clusterId = 0; clusterId < clustersCommands.size();clusterId++)
 			{
 /*				if(checkFreeProcessor()) // there is free processor

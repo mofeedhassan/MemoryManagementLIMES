@@ -97,7 +97,8 @@ public class TSPCachingTester {
 	static int alpha=4;
 	static int iterations =0;
 	static Map<Integer,String> resultsFiles= new HashMap<Integer,String> ();
-	
+	static String currentDirectory="";
+
 /*	run
 	/media/mofeed/A0621C46621C24164/CachingTests/parameters100
 	/media/mofeed/A0621C46621C24164/CachingTests/resultsHR3100
@@ -107,7 +108,12 @@ public class TSPCachingTester {
 		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
 		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
 		Logger.getRootLogger().setLevel(Level.OFF);
-		resultsFolder = runsInfoFolder = resultsFinalFolder = System.getProperty("user.dir");
+		
+		currentDirectory = System.getProperty("user.dir");
+		currentDirectory = standardizePath(currentDirectory);
+		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDirectory;
+		
+		//resultsFolder = runsInfoFolder = resultsFinalFolder = System.getProperty("user.dir");
 		resultsFile = resultsFolder+"/Cache";
 
 		String option  = args[0];
@@ -147,6 +153,50 @@ public class TSPCachingTester {
 		else
 			System.out.println("Wrong operation option (run/exract)");
 	}
+/*	public static void main(String args[]) {
+		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
+		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
+		Logger.getRootLogger().setLevel(Level.OFF);
+		resultsFolder = runsInfoFolder = resultsFinalFolder = System.getProperty("user.dir");
+		resultsFile = resultsFolder+"/Cache";
+
+		String option  = args[0];
+		if(option.equals("run"))
+		{
+			if(args.length < 2)
+			{
+				System.out.println("parameters for run are: [1] path to parameters file \n [2] path to results folder \n");
+				System.exit(1);
+			}
+			System.out.println("Starting run");
+			initializeExperimentParameters(args[1]);
+			resultsFolder = standardizePath(resultsFolder);
+			resultsFile=resultsFolder+"Cache";
+			displayRunParameters();
+			runExperiemment();
+		}
+		else if(option.equals("extract"))
+		{
+			if(args.length != 4)
+			{
+				System.out.println("parameters for extract are: [1] path to results folder \n [2] column to extract {base line: 2 time, 3 hits, 4 misses / approach: 6 time, 7 hits, 8 misses} \n [3] path to final extractions");
+				System.exit(1);
+			}
+			System.out.println("Starting data extraction");
+
+			resultsFolder = standardizePath(args[1]);
+			targetCol =Integer.parseInt(args[2]);
+			resultsFinalFolder =standardizePath(args[3]);
+			List<String> res = extractResults("/media/mofeed/A0621C46621C24164/03_Work/CachingProject/Experiement/testResults/ServerTestHR3/8"resultsFolder, targetCol);
+			for (String lines : res) {
+				System.out.println(lines);
+			}
+			initializeFilesNames();
+			wrtieToFile(res, resultsFinalFolder+"/"+resultsFiles.get(targetCol));
+		}
+		else
+			System.out.println("Wrong operation option (run/exract)");
+	}*/
 	public static void displayRunParameters()
 	{
 		System.out.println("The program will run with parameteres:");
@@ -597,7 +647,7 @@ public class TSPCachingTester {
 			else if(rawParameter.toLowerCase().startsWith("data"))
 			{
 				split = rawParameter.split(":");
-				dataFile = split[1];
+				dataFile = currentDirectory +split[1];
 
 			}
 			else if(rawParameter.toLowerCase().startsWith("caches"))
@@ -611,12 +661,14 @@ public class TSPCachingTester {
 			{
 				split = rawParameter.split(":");
 				//resultsFile = split[1];
-				resultsFolder = split[1];
+				resultsFolder = currentDirectory + split[1];
+				if(!resultsFolder.endsWith("/"))
+					resultsFolder+="/";
 			}	
 			else if(rawParameter.toLowerCase().startsWith("basefolder"))
 			{
 				split = rawParameter.split(":");
-				baseFolder = split[1];
+				baseFolder = currentDirectory+split[1];
 				if(!baseFolder.endsWith("/"))
 					baseFolder+="/";
 
@@ -638,7 +690,9 @@ public class TSPCachingTester {
 			else if(rawParameter.toLowerCase().startsWith("infofolder"))
 			{
 				split = rawParameter.split(":");
-				runsInfoFolder=	split[1];
+				runsInfoFolder=	currentDirectory + split[1];
+				if(!runsInfoFolder.endsWith("/"))
+					runsInfoFolder+="/";
 			}	
 			else if(rawParameter.toLowerCase().startsWith("part"))
 			{
@@ -679,7 +733,7 @@ public class TSPCachingTester {
 		List<String> lines = new ArrayList<String>();
 		BufferedReader bufferedReader=null;
 		try {
-			bufferedReader = new BufferedReader(new FileReader(fileName));
+			bufferedReader = new BufferedReader(new FileReader(currentDirectory+fileName));
 			String line ="";
 			while((line = bufferedReader.readLine()) != null) {
 				lines.add(line);

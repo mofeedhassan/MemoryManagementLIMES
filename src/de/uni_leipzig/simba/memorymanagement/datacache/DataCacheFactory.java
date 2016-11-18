@@ -32,6 +32,8 @@ public class DataCacheFactory {
 			return new TimedSLruCache(cacheSize, evictCount, capacity);
 		else if (cacheType.equals(CacheType.Simple))
 			return new SimpleCache(capacity);
+		else if (cacheType.equals(CacheType.FIFOSimple))
+			return new FIFOSimple(cacheSize, evictCount, capacity);
 		else
 			return new FifoCache(cacheSize, evictCount, capacity);
 

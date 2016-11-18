@@ -13,8 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+/*import org.apache.log4j.Level;
+import org.apache.log4j.Logger;*/
 
 import de.uni_leipzig.simba.measures.space.EuclideanMetric;
 import de.uni_leipzig.simba.measures.string.TrigramMeasure;
@@ -40,8 +40,17 @@ import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverFactory;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverType;
 import de.uni_leipzig.simba.memorymanagement.testTSPCaching.TSPCachingTester;
 
+import java.io.IOException;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 public class LTSPMain {
-	static Logger log = Logger.getLogger(TSPCachingTester.class.getName());
+	static Logger logger = Logger.getLogger(TSPCachingTester.class.getName());
 
 	static List<Double> thresholds= new ArrayList<>();
 	static List<Integer> capacities= new ArrayList<>();
@@ -730,9 +739,27 @@ public class LTSPMain {
 	1
 	true*/
 	public static void main(String[] args) {
-		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
+		/*Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
 		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
-		Logger.getRootLogger().setLevel(Level.OFF);
+		Logger.getRootLogger().setLevel(Level.OFF);*/
+		
+         Handler fileHandler  = null;
+         try{
+ 			//Creating consoleHandler and fileHandler
+ 			fileHandler  = new FileHandler("./PLTSP.log");
+ 			logger.addHandler(fileHandler);
+ 			
+ 			Formatter simpleFormatter = new SimpleFormatter();
+ 			fileHandler.setFormatter(simpleFormatter);
+ 			//Setting levels to handlers and LOGGER
+ 			fileHandler.setLevel(Level.ALL);
+ 			logger.setLevel(Level.ALL);
+  			
+ 			logger.log(Level.FINE, "Finer logged");
+ 		}catch(IOException exception){
+ 			logger.log(Level.SEVERE, "Error occur in FileHandler.", exception);
+ 		}
+		
 		currentDirectory = System.getProperty("user.dir");
 		currentDirectory = standardizePath(currentDirectory);
 		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDirectory;
@@ -765,7 +792,7 @@ public class LTSPMain {
 			resultsFolder = standardizePath(args[1]);
 			targetCol =Integer.parseInt(args[2]);
 			resultsFinalFolder =standardizePath(args[3]);
-			List<String> res = extractResults(/*"/media/mofeed/A0621C46621C24164/03_Work/CachingProject/Experiement/testResults/ServerTestHR3/8"*/resultsFolder, targetCol);
+			List<String> res = extractResults(resultsFolder, targetCol);
 			for (String lines : res) {
 				System.out.println(lines);
 			}
