@@ -13,6 +13,7 @@ import de.uni_leipzig.simba.memorymanagement.Index.planner.DataOperator;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 //import org.apache.log4j.Logger;
 
@@ -51,7 +52,7 @@ public class CacheAccessExecution {
      */
     public int run() {
         Mapping m = new Mapping();
-        int count = 0;
+        AtomicInteger count = new AtomicInteger(0);
         DataManipulationCommand currentCommand;
         for (int i = 0; i < commands.size(); i++) {
             currentCommand = commands.get(i);
@@ -100,7 +101,7 @@ public class CacheAccessExecution {
                     for (Instance t : source.getAllInstances()) {
                         d = measure.getSimilarity(s, t, property, property);
                         if (d >= threshold) {
-                            count++;
+                            count.incrementAndGet();
  //                          m.add(s.getUri(), t.getUri(), d);
                         }
                     }
@@ -108,7 +109,7 @@ public class CacheAccessExecution {
         		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():has a distance="+d+":"+ System.currentTimeMillis());
             }
         }
-        return count; // m.getNumberofMappings();
+        return count.get(); // m.getNumberofMappings();
  //       System.out.println("Mapping contains "+m.getNumberofMappings()+" mappings");
  //              System.out.println("Mapping contains "+count+" mappings");
     }

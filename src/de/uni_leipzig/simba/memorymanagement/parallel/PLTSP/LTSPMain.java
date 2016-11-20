@@ -33,7 +33,7 @@ import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexer;
-import de.uni_leipzig.simba.memorymanagement.parallel.PLTSP.*;
+import de.uni_leipzig.simba.memorymanagement.parallel.*;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.PathFinder;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SimpleSolver;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverFactory;
@@ -107,6 +107,8 @@ public class LTSPMain {
 		System.out.println("Repeats number: "+repeats);
 		System.out.println("Integer/String(HR3,Trigram): "+type);
 		System.out.println("Run base/approach/both(1,2,0): "+whatToRun);
+		System.out.println("Core: "+numberOfProcessors);
+
 	}
 	public static String standardizePath(String originalPath)
 	{
@@ -247,7 +249,7 @@ public class LTSPMain {
 										pc.clustersIds = path;
 
 										//Set the cache if it is shared or not
-										pc.setCacheSharing(false);
+										pc.setCacheSharing(true);
 
 										parallelBegin = System.currentTimeMillis();
 										//Run the parallel controller

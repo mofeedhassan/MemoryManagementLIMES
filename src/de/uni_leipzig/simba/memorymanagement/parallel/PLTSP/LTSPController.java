@@ -52,7 +52,7 @@ public class LTSPController {
 	Measure measure=null;
 	//The number of processors that controls the process of creation of the threads of ParallelRunner class
 	private static int numberOfProcessors = Runtime.getRuntime().availableProcessors(); //default value
-	private static ExecutorService pool =  Executors.newFixedThreadPool(getNumberOfProcessors());
+	private static final ExecutorService pool =  Executors.newFixedThreadPool(getNumberOfProcessors());
 	private /*static*/ Map<Integer,String> resultsCollector = new HashMap<Integer, String>();
 	
 	public int[] clustersIds=null;
@@ -99,8 +99,8 @@ public class LTSPController {
 		this.measure=measure;
 		this.threshold=threshold;
 		this.shared=shared;
-		numberOfProcessors =NoProcessors;
-		pool = Executors.newFixedThreadPool(numberOfProcessors);
+		/*numberOfProcessors =NoProcessors;
+		pool = Executors.newFixedThreadPool(numberOfProcessors);*/
 	}
 	
 	LinkedHashMap<Integer,List<DataManipulationCommand>> getClustersCommands() {

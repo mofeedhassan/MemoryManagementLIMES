@@ -1,9 +1,10 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.PLTSP;
+package de.uni_leipzig.simba.memorymanagement.parallel;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import de.uni_leipzig.simba.memorymanagement.parallel.PLTSP.LTSPMain;
 import de.uni_leipzig.simba.memorymanagement.testTSPCaching.TSPCachingTester;
 
 public class LTSPMainTest {

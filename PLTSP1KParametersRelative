@@ -13,4 +13,4 @@ part:2
 recordTimes:true
 repeats:1
 type:integer
-core:1
+core:4
