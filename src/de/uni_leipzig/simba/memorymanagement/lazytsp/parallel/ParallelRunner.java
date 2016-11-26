@@ -1,9 +1,6 @@
-package de.uni_leipzig.simba.memorymanagement.parallel;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import de.uni_leipzig.simba.data.Mapping;
 import de.uni_leipzig.simba.measures.Measure;

@@ -117,28 +117,33 @@ public abstract class AbstractCache implements DataCache {
      */
 
     public Cache  get(IndexItem key, Indexer indexer) {//changed from 
+        logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": get to retrieve key = "+key+": "+System.currentTimeMillis());
 
         Object value = m_cacheMap.get(key);
         if (value != null)// that is hit
         {
  //           log4j.info("get: value existed");
+            logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": key = "+key+" found in hte cache when RETRIEVED count a hit: "+System.currentTimeMillis());
 
             hitAccess(key);
             m_hits++; // added by me to suit the wrapping needed
         } else // added by me to suit the wrapping needed
         {
  //           log4j.info("get: value missed");
+            logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": key = "+key+" NOT found in hte cache when RETRIEVED count a miss: "+System.currentTimeMillis());
 
             m_misses++;
             put(key, indexer.get(key));// put the IndexItem and its values from the indexer
            // put(key, key);// put the IndexItem and its values from the indexer
             value = m_cacheMap.get(key);// after it is added
+            logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": key = "+key+" added to cache after a miss: "+System.currentTimeMillis());
+
         }
 
         return (Cache)value; ////cast the retrieved object to unbox the cache required
     }
     ////////////////////// HERE IS THE USED GET IN PARALLELIZATION/////////////////////
-     public  Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
+/*     public  Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
 
  		logger.info(Thread.currentThread().getName()+getClass().getName()+" check value existence in cache Map in get() "+System.currentTimeMillis());
 
@@ -166,19 +171,23 @@ public abstract class AbstractCache implements DataCache {
   		logger.info(Thread.currentThread().getName()+getClass().getName()+" returns the required value in get " +System.currentTimeMillis());
 
         return (Cache)value; ////cast the retrieved object to unbox the cache required
-    }
+    }*/
      
-/*     public  Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
+     public  Cache get(IndexItem key, Indexer indexer, String load) {//changed from 
+         logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": get to Load command key = "+key+": "+System.currentTimeMillis());
 
          Object value = m_cacheMap.get(key);
          if (value == null)// that is miss
           {
-                put(key, indexer.get(key));// put the IndexItem and its values from the indexer
-                 value = m_cacheMap.get(key);// after it is added
+             logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": key = "+key+"not found in cache : "+System.currentTimeMillis());
+             put(key, indexer.get(key));// put the IndexItem and its values from the indexer
+             value = m_cacheMap.get(key);// after it is added
+             logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": key = "+key+" added to cache: "+System.currentTimeMillis());
+
          }
          //notifyAll();
          return (Cache)value; ////cast the retrieved object to unbox the cache required
-     }*/
+     }
 
     /**
      * @return the specified size of the cache
@@ -198,41 +207,24 @@ public abstract class AbstractCache implements DataCache {
      * @return null if it was first time to be in the cache or the previously
      * and replaced values associated to this key
      */
-     public Object put(Object key, Object val) {
+/*     public Object put(Object key, Object val) {
     	IndexItem removed= null;
         if (m_cacheMaxSize > 0) {
- //           log4j.info("put"+currentSize+"+"+((IndexItem) key).getSize()+"<>"+ capacity);
      		logger.info(Thread.currentThread().getName()+getClass().getName()+" cache Map is full "+System.currentTimeMillis());
-     		
-     		Integer tmpCurrentSize = new Integer(currentSize);
-   		
             int hypercubeSize= ((IndexItem) key).getSize();
-            
-            
-            synchronized(tmpCurrentSize)
-            {
-        	 while ((tmpCurrentSize + hypercubeSize) > capacity) {
-           		logger.info(Thread.currentThread().getName()+getClass().getName()+" currentsize vs capacity "+tmpCurrentSize+":"+capacity +System.currentTimeMillis());
+        	 while ((currentSize + hypercubeSize) > capacity) {
+           		logger.info(Thread.currentThread().getName()+getClass().getName()+" currentsize vs capacity "+currentSize+":"+capacity +System.currentTimeMillis());
           		logger.info(Thread.currentThread().getName()+getClass().getName()+" begin evict an item from cache Map -> evict() "+System.currentTimeMillis());
         		 removed = (IndexItem)evict();
   //               log4j.info("EVICT "+removed);
         		 if(removed!=null) // for cases like FIFO2Chance if it is not removed for a second chance it will return null
-        			 //currentSize = currentSize - removed.getSize();
-        			 tmpCurrentSize = tmpCurrentSize - removed.getSize();
-
-          		logger.info(Thread.currentThread().getName()+getClass().getName()+" reduce size after eviction in put() cache current size= " +tmpCurrentSize+" :" +System.currentTimeMillis());
-
-             }
-            putAccess(key);//just to update the accessibility key map order based on the cache strategy
-
-
-            //currentSize = currentSize + ((IndexItem)key).getSize();
-            currentSize = tmpCurrentSize + ((IndexItem)key).getSize();
-            
+        			 currentSize = currentSize - removed.getSize();
+          		logger.info(Thread.currentThread().getName()+getClass().getName()+" reduce size after eviction in put() cache current size= " +currentSize+" :" +System.currentTimeMillis());
+          		putAccess(key);//just to update the accessibility key map order based on the cache strategy
+            currentSize = currentSize + ((IndexItem)key).getSize();
             }
       		logger.info(Thread.currentThread().getName()+getClass().getName()+" increase size after add in put= " +currentSize+" :" +System.currentTimeMillis());
        		return m_cacheMap.put(key, val);//add the object as key and value to the cache
-
         }
         return null;
     }
@@ -242,40 +234,34 @@ public abstract class AbstractCache implements DataCache {
      private Object getCacheSyncObject(final Integer id) {
     	 currentSizeSynch.putIfAbsent(id, id);
     	  return currentSizeSynch.get(id);
-    	}
+    	}*/
      
- /*    public Object put(Object key, Object val) {
+     public Object put(Object key, Object val) {
      	IndexItem removed= null;
          if (m_cacheMaxSize > 0) {
-  //           log4j.info("put"+currentSize+"+"+((IndexItem) key).getSize()+"<>"+ capacity);
-      		logger.info(Thread.currentThread().getName()+" cache Map is full "+System.currentTimeMillis());
+            logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": cache Map is full : "+System.currentTimeMillis());
       		
              int hypercubeSize= ((IndexItem) key).getSize();
              
          	 while ((currentSize+ hypercubeSize) > capacity) {
-            		logger.info(Thread.currentThread().getName()+" currentsize vs capacity "+currentSize+":"+capacity +System.currentTimeMillis());
-           		logger.info(Thread.currentThread().getName()+" begin evict an item from cache Map -> evict() "+System.currentTimeMillis());
+
+            	logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":"+getClass().getName()+":"+(getLineNumber()-1)+": currentsize vs capacity ==> "+currentSize+" vs "+capacity+":"+System.currentTimeMillis());
+           		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": begin evict an item from cache Map -> evict() :"+System.currentTimeMillis());
          		 removed = (IndexItem)evict();
-   //               log4j.info("EVICT "+removed);
-         		// if(removed!=null) for cases like FIFO2Chance if it is not removed for a second chance it will return null
+         		 if(removed!=null) //for cases like FIFO2Chance if it is not removed for a second chance it will return null
          			 currentSize = currentSize - removed.getSize();
-           		logger.info(Thread.currentThread().getName()+" reduce size after eviction in put() cache current size= " +currentSize+" :" +System.currentTimeMillis());
+           		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": reduce size after eviction in put() cache current size= " +currentSize+" :" +System.currentTimeMillis());
 
               }
              putAccess(key);//just to update the accessibility key map order based on the cache strategy
-
-
              currentSize = currentSize + ((IndexItem)key).getSize();
-             
-             
-
-       		logger.info(Thread.currentThread().getName()+" increase size after add in put= " +currentSize+" :" +System.currentTimeMillis());
+       		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": increase size after add in put= " +currentSize+" :" +System.currentTimeMillis());
 
        		return m_cacheMap.put(key, val);//add the object as key and value to the cache
 
          }
          return null;
-     }*/
+     }
     /**
      * It removes specific value from the cache
      *
@@ -283,7 +269,8 @@ public abstract class AbstractCache implements DataCache {
      * @return list of values removed already from the cache
      */
      public synchronized List<Object> removeValues(Object key) {
-   		logger.info(Thread.currentThread().getName()+getClass().getName()+" removesAllValues " +System.currentTimeMillis());
+    		
+    	 logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": remove key = "+key+":" +System.currentTimeMillis());
 
     	List<Object> removed = new ArrayList<Object>();
     	int hypercubeSize= ((IndexItem) key).getSize();
@@ -292,6 +279,8 @@ public abstract class AbstractCache implements DataCache {
     	{
     		removed.add(key);
     		currentSize = currentSize - hypercubeSize;
+       		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": decrease size after remove the key in removeValues= " +currentSize+" :" +System.currentTimeMillis());
+
     	}
   /*    
         Iterator<Object> iter = m_cacheMap.keySet().iterator();
@@ -352,4 +341,7 @@ public abstract class AbstractCache implements DataCache {
     public String toString() {
         return m_cacheMap.toString();
     }
+	private static int getLineNumber() {
+	    return Thread.currentThread().getStackTrace()[2].getLineNumber();
+	}
 }

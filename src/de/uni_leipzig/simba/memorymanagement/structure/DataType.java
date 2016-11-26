@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.Structures;
+package de.uni_leipzig.simba.memorymanagement.structure;
 
 public enum DataType {
 HR3,TRIGRAMS

@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel;
 
 import java.util.ArrayList;
 import java.util.Collections;

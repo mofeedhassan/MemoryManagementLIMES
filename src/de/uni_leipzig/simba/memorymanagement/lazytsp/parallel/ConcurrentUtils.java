@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;

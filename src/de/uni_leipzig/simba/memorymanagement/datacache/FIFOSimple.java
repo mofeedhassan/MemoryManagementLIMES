@@ -15,6 +15,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -27,8 +29,11 @@ import java.util.logging.SimpleFormatter;
  */
 public class FIFOSimple extends AbstractCache {
 	static java.util.logging.Logger logger = java.util.logging.Logger.getLogger("LIMES");
-	protected Map<Object, Object> m_cacheMap = new HashMap<Object, Object>();
-	protected Queue<Object> m_access = new LinkedList<Object>();
+	protected ConcurrentHashMap<Object, Object> m_cacheMap = new ConcurrentHashMap<>();
+	//protected Map<Object, Object> m_cacheMap = new HashMap<Object, Object>();
+	protected ConcurrentLinkedQueue<Object> m_access = new ConcurrentLinkedQueue<>();
+
+	//protected Queue<Object> m_access = new LinkedList<Object>();
 
 	protected final int m_cacheMaxSize;
 	protected final int m_evictCount;
@@ -61,19 +66,19 @@ public class FIFOSimple extends AbstractCache {
 	@Override
 	public Cache getData(IndexItem index, Indexer indexer) {
 		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":getData():"+ System.currentTimeMillis());
-		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":getData(): get hypercube with index"+index+" :"+ System.currentTimeMillis());
+		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":getData(): get hypercube with index "+index+" :"+ System.currentTimeMillis());
 
 		Object value = m_cacheMap.get(index);
 		if (value != null)// that is hit
 		{
 			//m_hits++; // added by me to suit the wrapping needed
 			m_hits.incrementAndGet();
-			System.out.println(m_hits);
+			System.out.println("Hits= "+m_hits);
 		}
 		else // added by me to suit the wrapping needed
 		{
 			m_misses.incrementAndGet();
-			System.out.println(m_hits);
+			System.out.println("Misses= "+m_misses);
 			logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":getData(): missed hypercube with index"+index+" :"+ System.currentTimeMillis());
 			put(index, indexer.get(index));// put the IndexItem and its values from the indexer
 			//value = m_cacheMap.get(index);// after it is added - modified by the next statement as the value exist why ask the map again for it
@@ -92,7 +97,7 @@ public class FIFOSimple extends AbstractCache {
 
 		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":getData() with Load:"+ System.currentTimeMillis());
 		if(!m_cacheMap.containsKey(index))
-		{
+		{ 
 			logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":getData() with Load: did not find data with key ="+index+" cache :"+System.currentTimeMillis());
 			put(index, indexer.get(index));
 		}
@@ -119,7 +124,7 @@ public class FIFOSimple extends AbstractCache {
 			putCache(hypercubeSize);
 			putAccess(key);// lock m_access only
 
-			return m_cacheMap.put(key, val);
+			return m_cacheMap.putIfAbsent(key, val);
 		}
 		return null;
 	}

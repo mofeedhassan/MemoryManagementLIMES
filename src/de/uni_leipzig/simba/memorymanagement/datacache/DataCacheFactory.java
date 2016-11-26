@@ -1,7 +1,9 @@
 package de.uni_leipzig.simba.memorymanagement.datacache;
 
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
+
 public class DataCacheFactory {
-	public static int cacheSize=100;
+	public static int cacheSize=Integer.MAX_VALUE;
 	public static int evictCount=1;
 	public static int capacity=20;
 
@@ -10,6 +12,12 @@ public class DataCacheFactory {
 	{
 		cacheSize= size;
 		evictCount = evCount;
+		capacity = Capacity;
+		return createCache(cacheType);
+	}
+	
+	public static DataCache createCache(CacheType cacheType, int Capacity)
+	{
 		capacity = Capacity;
 		return createCache(cacheType);
 	}

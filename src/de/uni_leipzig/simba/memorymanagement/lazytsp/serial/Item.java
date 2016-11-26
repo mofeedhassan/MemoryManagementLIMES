@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.testTSPCaching;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.serial;
 
 public class Item {
 	public String key;

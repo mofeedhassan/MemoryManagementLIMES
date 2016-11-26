@@ -15,16 +15,19 @@ import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Graph;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.NaiveClustering;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Node;
 import de.uni_leipzig.simba.memorymanagement.datacache.AbstractCache;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.IndexItem;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
-import de.uni_leipzig.simba.memorymanagement.indexing.IndexerType;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
+import de.uni_leipzig.simba.memorymanagement.structure.DataOperator;
+import de.uni_leipzig.simba.memorymanagement.structure.IndexerType;
 
 public class PTSPPlanner {
 	static AbstractCache cache=null;
     int comparisons;
+
+	static java.util.logging.Logger logger = java.util.logging.Logger.getLogger("LIMES");
 
     /**
      * Generate a data access and comparison plan based on the results of a
@@ -35,12 +38,16 @@ public class PTSPPlanner {
      * @return A list of commands to be executed by the engine
      */
     public LinkedHashMap<Integer,List<DataManipulationCommand>> plan(Map<Integer, Cluster> clusters, int[] path) {
+    	
     	LinkedHashMap<Integer,List<DataManipulationCommand>> commands= new LinkedHashMap<Integer, List<DataManipulationCommand>>();
+    	
     	List<DataManipulationCommand> clusterCommandsSet = null;
+    	
+    	int totalPlanSize=0;
+    	
         if (!clusters.isEmpty()) {
         	clusterCommandsSet = new ArrayList<DataManipulationCommand>();
             Cluster c;
-            int totalSize = 0;
 
             //first get all elements of first entry into memory            
             c = clusters.get(path[0]);
@@ -69,13 +76,19 @@ public class PTSPPlanner {
                 //System.out.println("Current cache: " + currentCache);
                 addCompareOperations(c, clusterCommandsSet);
                 oldItems = currentCache;
+                
+                totalPlanSize+=clusterCommandsSet.size();
                 commands.put(path[i], clusterCommandsSet); // put cluster number and its associated list of commands
 
             }
         }
+		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":plan(): total parallel plan size ="+totalPlanSize+" :"+ System.currentTimeMillis());
         return commands;
     }
 
+    public static int getLineNumber() {
+	    return Thread.currentThread().getStackTrace()[2].getLineNumber();
+	}
     /**
      * Get items from nodes in cluster c
      *

@@ -1,4 +1,4 @@
-data:lgd1k.csv
+data:lgd200.csv
 results:resultsPLTSPHR3
 baseFolder:baseFolder
 caches:FIFOSimple
@@ -7,7 +7,7 @@ optimTime:250
 solvers:SortingSolver
 iterations:0
 thresholds:0.95
-capacities:100:100:2
+capacities:50:50:2
 infoFolder:HR3Info
 part:2
 recordTimes:true

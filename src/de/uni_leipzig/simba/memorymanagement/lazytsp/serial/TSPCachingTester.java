@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.testTSPCaching;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.serial;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -11,7 +11,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /*import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
@@ -19,8 +24,8 @@ import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.XMLFormatter;*/
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+//import org.apache.log4j.Level;
+//import org.apache.log4j.Logger;
 
 import de.uni_leipzig.simba.measures.space.EuclideanMetric;
 import de.uni_leipzig.simba.measures.string.TrigramMeasure;
@@ -35,8 +40,6 @@ import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPSolver;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.execution.CacheAccessExecution;
 //import de.uni_leipzig.simba.memorymanagement.TSPSolver.GreedySolver;
 import de.uni_leipzig.simba.memorymanagement.datacache.AbstractCache;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
-import de.uni_leipzig.simba.memorymanagement.datacache.ClusteringType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.datacache.SimpleCache;
@@ -46,7 +49,9 @@ import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexer;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.PathFinder;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SimpleSolver;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverFactory;
-import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverType;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
+import de.uni_leipzig.simba.memorymanagement.structure.ClusteringType;
+import de.uni_leipzig.simba.memorymanagement.structure.SolverType;
 
 /**
  * @author mofeed
@@ -67,7 +72,9 @@ public class TSPCachingTester {
 	/**
 	 * logger
 	 */
-	static Logger log = Logger.getLogger(TSPCachingTester.class.getName());
+	//static Logger log = Logger.getLogger(TSPCachingTester.class.getName());
+	static java.util.logging.Logger logger = Logger.getLogger("LIMES"); 
+
 
 	static List<Double> thresholds= new ArrayList<Double>();
 	static List<Integer> capcities= new ArrayList<Integer>();
@@ -105,9 +112,27 @@ public class TSPCachingTester {
 	1
 	true*/
 	public static void main(String args[]) {
-		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
+		/*Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
 		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
-		Logger.getRootLogger().setLevel(Level.OFF);
+		Logger.getRootLogger().setLevel(Level.OFF);*/
+		
+        Handler fileHandler  = null;
+        try{
+			//Creating consoleHandler and fileHandler
+			fileHandler  = new FileHandler("./TSP.log");
+			logger.addHandler(fileHandler);
+			
+			Formatter simpleFormatter = new SimpleFormatter();
+			fileHandler.setFormatter(simpleFormatter);
+			//Setting levels to handlers and LOGGER
+			fileHandler.setLevel(Level.ALL);
+			logger.setLevel(Level.ALL);
+ 			
+			logger.log(Level.FINE, "Finer logged");
+		}catch(IOException exception){
+			logger.log(Level.SEVERE, "Error occur in FileHandler.", exception);
+		}
+        
 		
 		currentDirectory = System.getProperty("user.dir");
 		currentDirectory = standardizePath(currentDirectory);
@@ -129,7 +154,8 @@ public class TSPCachingTester {
 			resultsFolder = standardizePath(resultsFolder);
 			resultsFile=resultsFolder+"Cache";
 			displayRunParameters();
-			runExperiemment();
+			TSPCachingTester tsp = new TSPCachingTester();
+			tsp.runExperiemment();
 		}
 		else if(option.equals("extract"))
 		{
@@ -223,7 +249,7 @@ public class TSPCachingTester {
 			originalPath+="/";
 		return originalPath;
 	}
-	private static void runExperiemment()
+	private /*static*/ void runExperiemment()
 	{
 		long begin=0,end=0,InfoBegin=0;
 		List<DataManipulationCommand> plan=null;
@@ -267,16 +293,20 @@ public class TSPCachingTester {
 
 									///////start indexing
 									hr3.runIndexing(new File(dataFile), true);
+									
 
 									commonInfo+=(System.currentTimeMillis()-InfoBegin)+"\t";
 
 									/////// create graph
 									InfoBegin = System.currentTimeMillis();
 									g = hr3.generateTaskGraph();
+									logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():graph craeted with # Nodes = "+g.getAllNodes().size()+" #Edges = "+g.getAllEdges().size()+":"+ System.currentTimeMillis());
 									commonInfo+=(System.currentTimeMillis()-InfoBegin)+"\t";
 									//   runingInfo.add(InfoPiece);
 									///create planner object
 									planner = new TSPPlanner();
+									logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():object planner is created:"+ System.currentTimeMillis());
+
 									////////////////////////////------------Base Line (without TSP)-------------------------------////////////////////////////
 									if(whatToRun == 1 || whatToRun == 0)//1:base , 0: both
 									{
@@ -284,14 +314,18 @@ public class TSPCachingTester {
 										/// start creating plan with load,flush,get
 										begin = System.currentTimeMillis();
 										plan = planner.plan(g);
+										logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():Plan is created with length = "+plan.size()+":"+ System.currentTimeMillis());
 										InfoPiece += "BaseLine\t" +commonInfo +"\tNA\tNA\tNA\t"+(System.currentTimeMillis()-begin)+"\t";
 										///create the cache
 										dataCache = DataCacheFactory.createCache(CacheType.valueOf(cache), Integer.MAX_VALUE, 1,capacity); // new SimpleCache(capacity);
+										logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():cache is created:"+ System.currentTimeMillis());
 										cae = new CacheAccessExecution(dataCache, plan, new EuclideanMetric(), threshold, hr3);
+										logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():CacheAccessExecution craeted:"+System.currentTimeMillis());
 
 										///execute the plan
 										InfoBegin = System.currentTimeMillis();
 										int numberOfMappings = cae.run();
+										logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():Mappings created = "+numberOfMappings+":"+ System.currentTimeMillis());
 										InfoPiece+=numberOfMappings+"\t";
 										end = System.currentTimeMillis();
 										InfoPiece+=(end-InfoBegin)+"\n";
@@ -325,6 +359,8 @@ public class TSPCachingTester {
 										///start graph clustering
 										InfoBegin = System.currentTimeMillis();
 										Map<Integer, Cluster> clusters = gc.cluster(g, capacity);
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): clustering leads to #clusters = "+clusters.size()+" :"+ System.currentTimeMillis());
+
 										InfoPiece="Approach\t" +commonInfo +(System.currentTimeMillis()-InfoBegin)+"\t"+clusters.size()+"\t";
 										if(displayOnce)
 											System.out.println(InfoPiece);
@@ -355,8 +391,10 @@ public class TSPCachingTester {
 										TSPSolver.iterations = iterations;// in case it is TSP solver, otherwise the default is set inside the class- To change you need to do that from code
 										
 										int[] path = theSolver.getPath(clusters);
-										
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): solver created path with size = "+path.length+" :"+ System.currentTimeMillis());
+
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): create plan :"+ System.currentTimeMillis());
 
 										/// create and execution plan
 										InfoBegin = System.currentTimeMillis();
@@ -365,6 +403,8 @@ public class TSPCachingTester {
 										///create cache
 										dataCache = DataCacheFactory.createCache(CacheType.valueOf(cache), Integer.MAX_VALUE, 1,capacity);  //new SimpleCache(capacity);
 										cae = new CacheAccessExecution(dataCache, plan, new EuclideanMetric(), threshold, hr3);
+
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): Run :"+ System.currentTimeMillis());
 
 										///run the plan
 										InfoBegin = System.currentTimeMillis();
@@ -513,7 +553,8 @@ public class TSPCachingTester {
 										{
 											System.out.println(titles);
 											System.out.println(InfoPiece);
-										}										runingInfo.add(InfoPiece);
+										}										
+										runingInfo.add(InfoPiece);
 										InfoPiece="";
 
 										/////////////////////overall info
@@ -800,5 +841,8 @@ public class TSPCachingTester {
 		}catch(IOException e){
 			e.printStackTrace();
 		}
+	}
+	public static int getLineNumber() {
+	    return Thread.currentThread().getStackTrace()[2].getLineNumber();
 	}
 }

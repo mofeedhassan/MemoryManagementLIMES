@@ -6,7 +6,8 @@
 package de.uni_leipzig.simba.memorymanagement.pathfinder;
 
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Cluster;
-import de.uni_leipzig.simba.memorymanagement.testTSPCaching.Item;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.Item;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

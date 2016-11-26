@@ -1,11 +1,11 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.tests;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.tests;
 
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 import de.uni_leipzig.simba.memorymanagement.Index.planner.SortingSolver;
-import de.uni_leipzig.simba.memorymanagement.parallel.SortedSolvertmp;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.SortedSolvertmp;
 
 public class SortedSolverTest {
 	final int matrixSize=12;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.uni_leipzig.simba.memorymanagement.parallel.Structures;
+package de.uni_leipzig.simba.memorymanagement.structure;
 
 /**
  * @author mofeed

@@ -1,12 +1,12 @@
 /**
  * 
  */
-package de.uni_leipzig.simba.memorymanagement.pathfinder;
+package de.uni_leipzig.simba.memorymanagement.structure;
 
 /**
  * @author mofeed
- *
+ * 
  */
 public enum SolverType {
-	SimpleSolver,GreedySolver,TSPSolver,SortingSolver
+	DEFAULT,SIMPLESOLVER,GREEDYSOLVER,TSPSOLVER,SORTINGSOLVER
 }

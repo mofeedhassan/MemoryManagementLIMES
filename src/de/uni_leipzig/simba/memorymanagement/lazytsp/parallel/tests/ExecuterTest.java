@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.tests;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.tests;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -9,7 +9,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import de.uni_leipzig.simba.memorymanagement.parallel.*;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ConcurrentUtils;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.SortedSolvertmp;
 
 public class ExecuterTest {
 	public static int NUM_JOBS_TO_CREATE =10;

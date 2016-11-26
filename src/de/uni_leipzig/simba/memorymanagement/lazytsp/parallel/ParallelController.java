@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,18 +6,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.matheclipse.core.reflection.system.Array;
-
-import de.uni_leipzig.simba.GeoCache.cache.CacheFactory;
 import de.uni_leipzig.simba.data.Mapping;
-import de.uni_leipzig.simba.measures.space.EuclideanMetric;
+import de.uni_leipzig.simba.measures.Measure;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationCommand;
-import de.uni_leipzig.simba.memorymanagement.Index.planner.execution.CacheAccessExecution;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
-import de.uni_leipzig.simba.measures.Measure;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
 public class ParallelController {
 	////////////////////////////////////////////////    INPUTS   /////////////////////////////////

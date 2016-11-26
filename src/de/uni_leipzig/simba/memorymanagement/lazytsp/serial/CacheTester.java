@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.testTSPCaching;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.serial;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -10,8 +10,8 @@ import org.apache.log4j.Logger;
 
 import de.uni_leipzig.simba.GeoCache.io.FileOperations;
 import de.uni_leipzig.simba.memorymanagement.datacache.AbstractCache;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
 public class CacheTester {
     public static Logger          log4j      = Logger.getLogger(CacheTester.class);

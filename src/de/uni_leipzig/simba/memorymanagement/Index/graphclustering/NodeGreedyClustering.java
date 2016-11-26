@@ -7,7 +7,8 @@ package de.uni_leipzig.simba.memorymanagement.Index.graphclustering;
 
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPSolver;
 import de.uni_leipzig.simba.memorymanagement.indexing.HR3IndexItem;
-import de.uni_leipzig.simba.memorymanagement.testTSPCaching.Item;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.Item;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;

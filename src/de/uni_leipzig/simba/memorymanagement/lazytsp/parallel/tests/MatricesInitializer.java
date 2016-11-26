@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.tests;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.tests;
 
 public class MatricesInitializer {
 

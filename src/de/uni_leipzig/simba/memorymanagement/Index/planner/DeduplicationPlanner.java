@@ -4,10 +4,11 @@
  */
 package de.uni_leipzig.simba.memorymanagement.Index.planner;
 
-import de.uni_leipzig.simba.memorymanagement.indexing.IndexerType;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+
+import de.uni_leipzig.simba.memorymanagement.structure.IndexerType;
 
 /**
  * Interface for a planner that generates a list of cache access commands that 

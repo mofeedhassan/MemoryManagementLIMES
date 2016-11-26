@@ -9,9 +9,10 @@ import de.uni_leipzig.simba.data.Instance;
 import de.uni_leipzig.simba.data.Mapping;
 import de.uni_leipzig.simba.measures.Measure;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationCommand;
-import de.uni_leipzig.simba.memorymanagement.Index.planner.DataOperator;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
+import de.uni_leipzig.simba.memorymanagement.structure.DataOperator;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -54,14 +55,13 @@ public class CacheAccessExecution {
         Mapping m = new Mapping();
         AtomicInteger count = new AtomicInteger(0);
         DataManipulationCommand currentCommand;
+		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":run():commands = "+commands+": with size = "+commands.size()+" :"+ System.currentTimeMillis());
         for (int i = 0; i < commands.size(); i++) {
             currentCommand = commands.get(i);
             if (currentCommand.op.equals(DataOperator.LOAD)) {
                 for (int j = 0; j < currentCommand.operands.size(); j++) {
 //                    System.out.println("LOADING " + currentCommand.operands.get(j).getId());
-            		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():check data is in cache:"+ System.currentTimeMillis());
-            		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":call()::"+ System.currentTimeMillis());
-
+            		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":run():check data is in cache with index = "+currentCommand.operands.get(j)+":"+ System.currentTimeMillis());
                     {cache.getData(currentCommand.operands.get(j), indexer,"Load");}
                     
                 	//cache.getData(currentCommand.operands.get(j), indexer,"Load");
@@ -70,7 +70,7 @@ public class CacheAccessExecution {
             } else if (currentCommand.op.equals(DataOperator.FLUSH)) {
                 for (int j = 0; j < currentCommand.operands.size(); j++) {
 //                    System.out.println("FLUSHING " + currentCommand.operands.get(j).getId());
-            		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():flushes data from cache:"+ System.currentTimeMillis());
+            		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":run():flushes data from cache:"+ System.currentTimeMillis());
             		{cache.deleteData(currentCommand.operands.get(j));}
                 	//cache.deleteData(currentCommand.operands.get(j));
    //                 System.out.println(currentCommand.operands.get(j));
@@ -79,12 +79,12 @@ public class CacheAccessExecution {
             } else {//compare
             	Cache source=null;
             	Cache target=null;
-        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():loads source from cache:"+ System.currentTimeMillis());
+        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":run():loads source from cache with indexer = "+indexer+":"+ System.currentTimeMillis());
             	/*synchronized (cache)*/{source = cache.getData(currentCommand.operands.get(0), indexer);}
             	//source = cache.getData(currentCommand.operands.get(0), indexer);
  //               System.out.println(cache.getHits()+":"+cache.getMisses());
 //                System.out.println("LOADING "+currentCommand.operands.get(0).getId());
-        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():loads target from cache:"+ System.currentTimeMillis());
+        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":run():loads target from cache with indexer = "+indexer+":"+ System.currentTimeMillis());
             	/*synchronized (cache)*/{target = cache.getData(currentCommand.operands.get(1), indexer);}
             	//target = cache.getData(currentCommand.operands.get(1), indexer);
 //                System.out.println(cache.getHits()+":"+cache.getMisses());
@@ -95,7 +95,7 @@ public class CacheAccessExecution {
 
 //                System.out.println(source);
 //                System.out.println(target);
-        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():get mappings:"+ System.currentTimeMillis());
+        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":run():get mappings between source and target:"+ System.currentTimeMillis());
                 double d=0;
                 for (Instance s : source.getAllInstances()) {
                     for (Instance t : source.getAllInstances()) {
@@ -106,11 +106,14 @@ public class CacheAccessExecution {
                         }
                     }
                 }
-        		logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":run():has a distance="+d+":"+ System.currentTimeMillis());
             }
         }
         return count.get(); // m.getNumberofMappings();
  //       System.out.println("Mapping contains "+m.getNumberofMappings()+" mappings");
  //              System.out.println("Mapping contains "+count+" mappings");
     }
+    
+    public static int getLineNumber() {
+	    return Thread.currentThread().getStackTrace()[2].getLineNumber();
+	}
 }

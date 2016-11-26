@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.PLTSP;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.PLTSP;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,12 +27,12 @@ import java.util.logging.SimpleFormatter;
 import de.uni_leipzig.simba.data.Mapping;
 import de.uni_leipzig.simba.measures.Measure;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationCommand;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
-import de.uni_leipzig.simba.memorymanagement.parallel.ParallelController;
-import de.uni_leipzig.simba.memorymanagement.parallel.ParallelRunner;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelController;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelRunner;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
 public class LTSPController {
 	static Logger logger = Logger.getLogger("LIMES"); 
@@ -168,7 +168,8 @@ public class LTSPController {
 		if(NrProcessors > 0)
 		{
 			List<Future<String>> futures = new ArrayList<>();
-			logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":runParallelTasks() with Load:start threadsloop:"+ System.currentTimeMillis());
+			logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runParallelTasks() :"+ System.currentTimeMillis());
+
 			for(int clusterId = 0; clusterId < clustersCommands.size();clusterId++)
 			{
 /*				if(checkFreeProcessor()) // there is free processor
@@ -178,6 +179,8 @@ public class LTSPController {
 						cache = DataCacheFactory.createCache(CacheType.valueOf(cacheName), Integer.MAX_VALUE, 1,capacity);//create new cache object
 					int currentCluster = clustersIds[clusterId];
 					List<DataManipulationCommand> commands  = clustersCommands.get(currentCluster/*clusterId*/);//get a cluster's commands set
+					logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runParallelTasks(): assign to a task cluster Id = "+currentCluster+", commands = "+commands+" :"+ System.currentTimeMillis());
+					
 					LTSPTask task = new LTSPTask(getCache(), commands, measure, threshold, indexer);// crate a task and assign the commands set and the cache
 					task.setClusterId(clusterId++);
 					futures.add(pool.submit(task));//send to parallelism
@@ -234,5 +237,8 @@ public class LTSPController {
 			}
 		}
 	}
+	 public static int getLineNumber() {
+		    return Thread.currentThread().getStackTrace()[2].getLineNumber();
+		}
 
 }

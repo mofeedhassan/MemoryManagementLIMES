@@ -1,5 +1,5 @@
-package de.uni_leipzig.simba.memorymanagement.datacache;
+package de.uni_leipzig.simba.memorymanagement.structure;
 
 public enum ClusteringType {
-Naive,EdgeGreedy,NodeGreedy,HybridGreedy,SimpleEdge
+DEFAULT,NAIVE,EDGEGREEDY,NODEGREEDY,HYBRIDGREEDY,SIMPLEEDGE
 }

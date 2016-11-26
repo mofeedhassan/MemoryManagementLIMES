@@ -10,12 +10,13 @@ import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Graph;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.NaiveClustering;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Node;
 import de.uni_leipzig.simba.memorymanagement.datacache.AbstractCache;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.IndexItem;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
-import de.uni_leipzig.simba.memorymanagement.indexing.IndexerType;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
+import de.uni_leipzig.simba.memorymanagement.structure.DataOperator;
+import de.uni_leipzig.simba.memorymanagement.structure.IndexerType;
 
 import java.io.File;
 import java.util.*;
@@ -41,6 +42,7 @@ public class TSPPlanner implements DeduplicationPlanner {
      */
     public List<DataManipulationCommand> plan(Map<Integer, Cluster> clusters, int[] path) {
         List<DataManipulationCommand> result = new ArrayList<>();
+        
         if (!clusters.isEmpty()) {
             Cluster c;
             int totalSize = 0;

@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.PLTSP;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.PLTSP;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -12,6 +12,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /*import org.apache.log4j.Level;
 import org.apache.log4j.Logger;*/
@@ -27,27 +33,18 @@ import de.uni_leipzig.simba.memorymanagement.Index.planner.PTSPPlanner;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPPlanner;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPSolver;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.execution.CacheAccessExecution;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
-import de.uni_leipzig.simba.memorymanagement.datacache.ClusteringType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexer;
-import de.uni_leipzig.simba.memorymanagement.parallel.*;
+import de.uni_leipzig.simba.memorymanagement.io.Read;
+import de.uni_leipzig.simba.memorymanagement.io.Write;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.PathFinder;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SimpleSolver;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverFactory;
-import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverType;
-import de.uni_leipzig.simba.memorymanagement.testTSPCaching.TSPCachingTester;
-
-import java.io.IOException;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
+import de.uni_leipzig.simba.memorymanagement.structure.ClusteringType;
+import de.uni_leipzig.simba.memorymanagement.structure.SolverType;
 
 public class LTSPMain {
 	//static Logger log = Logger.getLogger(TSPCachingTester.class.getName());
@@ -116,7 +113,7 @@ public class LTSPMain {
 			originalPath+="/";
 		return originalPath;
 	}
-	private static void runExperiment()
+	private void runExperiment()
 	{
 		long begin=0,end=0,InfoBegin=0;
 		long parallelBegin=0;
@@ -171,10 +168,14 @@ public class LTSPMain {
 									/////// create graph
 									InfoBegin = System.currentTimeMillis();
 									g = hr3.generateTaskGraph();
+									logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():graph craeted with # Nodes = "+g.getAllNodes().size()+" #Edges = "+g.getAllEdges().size()+":"+ System.currentTimeMillis());
+
 									commonInfo+=(System.currentTimeMillis()-InfoBegin)+"\t";//capcity+indexing time + graph creation
 									//   runingInfo.add(InfoPiece);
 									///create planner object
 									planner = new TSPPlanner();
+									logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():object planner is created:"+ System.currentTimeMillis());
+
 									////////////////////////////------------Base Line (without TSP)-------------------------------////////////////////////////
 									if(whatToRun == 1 || whatToRun == 0)//1:base , 0: both
 									{
@@ -223,6 +224,8 @@ public class LTSPMain {
 										///start graph clustering
 										InfoBegin = System.currentTimeMillis();
 										Map<Integer, Cluster> clusters = gc.cluster(g, capacity);
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): clustering leads to #clusters = "+clusters.size()+" :"+ System.currentTimeMillis());
+
 										//method name + information common={capcity+indexing time + graph creation}+clustering+ nnumber of clusters
 										InfoPiece="Approach\t" +commonInfo +(System.currentTimeMillis()-InfoBegin)+"\t"+clusters.size()+"\t";
 										if(displayOnce)
@@ -235,25 +238,47 @@ public class LTSPMain {
 										TSPSolver.iterations = iterations;// in case it is TSP solver, otherwise the default is set inside the class- To change you need to do that from code
 
 										int[] path = theSolver.getPath(clusters);
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): solver created path with size = "+path.length+" :"+ System.currentTimeMillis());
+
 										//method name + information common={capcity+indexing time + graph creation}+clustering+ #clusters + path-creation
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
+
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): create parallel plan set of commands for each cluster but grouped by cluster Id:"+ System.currentTimeMillis());
 
 										/// create and execution plan
 										InfoBegin = System.currentTimeMillis();
 										parallePlan = parralelPlanner.plan(clusters, path);
+										int cc=0;
+										for (int j : parallePlan.keySet()) {
+											int x  = parallePlan.get(j).size();
+											cc+=j;
+										}
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments():cc = "+cc+" :"+ System.currentTimeMillis());
+
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments():Plan = "+parallePlan+": with size = "+parallePlan.size()+" :"+ System.currentTimeMillis());
+
 										//method name + information common={capcity+indexing time + graph creation}+clustering+ #clusters + path-creation + parallel-plan-creation
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
 
 										///////////////////////////// create parallel controller
+										
 										LTSPController pc = new LTSPController(parallePlan,cache,capacity, hr3,new EuclideanMetric(), threshold,true,numberOfProcessors);
-										pc.clustersIds = path;
+										pc.clustersIds = path; // copy the path sequence to the parallel controller to iterate over it
+										
+										
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments():parallel controller created :"+ System.currentTimeMillis());
 
 										//Set the cache if it is shared or not
 										pc.setCacheSharing(true);
 
 										parallelBegin = System.currentTimeMillis();
+										
+										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments():parallel Run :"+ System.currentTimeMillis());
+
 										//Run the parallel controller
 										pc.runParallelTasks();
+										
+										
 										int n=0;
 										for (String r : pc.results) {
 											String[] sp = r.split(":");
@@ -479,8 +504,8 @@ public class LTSPMain {
 						System.out.println(resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster);
 
 						if(recordTimes)
-							wrtieToFile(runningInfo,runsInfoFolder+typeLabel+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver);
-						wrtieToFile(results,resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver+typeLabel);
+							Write.wrtieToFile(runningInfo,runsInfoFolder+typeLabel+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver);
+						Write.wrtieToFile(results,resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver+typeLabel);
 						runningInfo.clear();
 					}//thresholds
 				}//caches
@@ -499,7 +524,7 @@ public class LTSPMain {
 			List<String> data = new ArrayList<String>();
 			for (String file : files) {
 				cacheName+=file.substring(file.lastIndexOf("/")+1)+"\t";// extracts the file name is a header
-				data = readFromFile(file);// read the data recorded from this file as lines
+				data = Read.readFromFile(file);// read the data recorded from this file as lines
 				if(firstTime)//first time
 				{
 					results.add(0, "");
@@ -553,7 +578,7 @@ public class LTSPMain {
 	}
 	private static void initializeExperimentParameters(String fileName)
 	{
-		List<String> rawParameters = readFromFile(currentDirectory+fileName);
+		List<String> rawParameters = Read.readFromFile(currentDirectory+fileName);
 		String split[];
 		for (String rawParameter : rawParameters) {
 			if(rawParameter.toLowerCase().startsWith("thresholds"))
@@ -673,7 +698,7 @@ public class LTSPMain {
 		System.out.println(repeats);
 		System.out.println(type);
 	}
-	private static List<String> readFromFile(String fileName)
+	/*private static List<String> readFromFile(String fileName)
 	{
 		List<String> lines = new ArrayList<String>();
 		BufferedReader bufferedReader=null;
@@ -743,7 +768,7 @@ public class LTSPMain {
 		}catch(IOException e){
 			e.printStackTrace();
 		}
-	}
+	}*/
 	/*	run
 	/media/mofeed/A0621C46621C24164/CachingTests/parameters100
 	/media/mofeed/A0621C46621C24164/CachingTests/resultsHR3100
@@ -791,7 +816,8 @@ public class LTSPMain {
 			resultsFolder = standardizePath(resultsFolder);
 			resultsFile=resultsFolder+"Cache";
 			displayRunParameters();
-			runExperiment();
+			LTSPMain obj = new LTSPMain();
+			obj.runExperiment();
 		}
 		else if(option.equals("extract"))
 		{
@@ -810,11 +836,16 @@ public class LTSPMain {
 				System.out.println(lines);
 			}
 			initializeFilesNames();
-			wrtieToFile(res, resultsFinalFolder+"/"+resultsFiles.get(targetCol));
+			Write.wrtieToFile(res, resultsFinalFolder+"/"+resultsFiles.get(targetCol));
 		}
 		else
 			System.out.println("Wrong operation option (run/extract)");
 
 	}
+	
+	   public static int getLineNumber() {
+		    return Thread.currentThread().getStackTrace()[2].getLineNumber();
+		}
+	
 
 }

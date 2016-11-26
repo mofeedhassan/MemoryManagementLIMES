@@ -8,7 +8,8 @@ package de.uni_leipzig.simba.memorymanagement.pathfinder;
 import java.util.Map;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Cluster;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Node;
-import de.uni_leipzig.simba.memorymanagement.testTSPCaching.Item;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.Item;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

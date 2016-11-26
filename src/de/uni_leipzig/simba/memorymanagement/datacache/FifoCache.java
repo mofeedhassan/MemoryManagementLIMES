@@ -29,6 +29,8 @@ public class FifoCache extends AbstractCache{
 
 	@Override
 	public void deleteData(IndexItem index) {
+        logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+": key = "+index+" will be removed and  FLUSHED: "+System.currentTimeMillis());
+
 		List<Object> removed = removeValues(index);
 		if(removed!=null)
 			log4j.debug("removed :" + index.toString());		
@@ -51,18 +53,17 @@ public class FifoCache extends AbstractCache{
 	}
 
 	@Override
-	protected /*synchronized*/ Object evict() {
+	protected  Object evict() {
 		Object removed =null;
         for (int i = 0; i < m_evictCount && !m_access.isEmpty(); i++) {
             removed = m_access.poll();
-     		//logger.debug(Thread.currentThread().getName()+" evicts cache Map for the ith "+ i +System.currentTimeMillis());
             m_cacheMap.remove(removed);
         }	
         return removed;
 	}
 
 	@Override
-	protected  /*synchronized*/ void putAccess(Object key) {
+	protected  void putAccess(Object key) {
         m_access.add(key);		
 	}
     @Override
@@ -88,5 +89,7 @@ public class FifoCache extends AbstractCache{
 		return super.get(index, indexer,load);
 
 	}
-
+	public static int getLineNumber() {
+	    return Thread.currentThread().getStackTrace()[2].getLineNumber();
+	}
 }

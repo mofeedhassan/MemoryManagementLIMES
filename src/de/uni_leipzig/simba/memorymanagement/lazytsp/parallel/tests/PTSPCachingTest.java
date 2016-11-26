@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.parallel.tests;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.tests;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -27,18 +27,18 @@ import de.uni_leipzig.simba.memorymanagement.Index.planner.PTSPPlanner;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPPlanner;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPSolver;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.execution.CacheAccessExecution;
-import de.uni_leipzig.simba.memorymanagement.datacache.CacheType;
-import de.uni_leipzig.simba.memorymanagement.datacache.ClusteringType;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexer;
-import de.uni_leipzig.simba.memorymanagement.parallel.ParallelController;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelController;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.TSPCachingTester;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.PathFinder;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SimpleSolver;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverFactory;
-import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverType;
-import de.uni_leipzig.simba.memorymanagement.testTSPCaching.TSPCachingTester;
+import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
+import de.uni_leipzig.simba.memorymanagement.structure.ClusteringType;
+import de.uni_leipzig.simba.memorymanagement.structure.SolverType;
 
 public class PTSPCachingTest {
 

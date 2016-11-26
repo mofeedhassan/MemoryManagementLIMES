@@ -5,6 +5,8 @@
 package de.uni_leipzig.simba.memorymanagement.Index.planner;
 
 import de.uni_leipzig.simba.memorymanagement.indexing.IndexItem;
+import de.uni_leipzig.simba.memorymanagement.structure.DataOperator;
+
 import java.util.ArrayList;
 import java.util.List;
 

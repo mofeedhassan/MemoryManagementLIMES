@@ -1,5 +1,5 @@
-package de.uni_leipzig.simba.memorymanagement.datacache;
+package de.uni_leipzig.simba.memorymanagement.structure;
 
 public enum CacheType {
-    LRU, SLRU,LFU,LFUDA,FIFO,FIFO2nd,TimedLru,TimedSLru,Simple,FIFOSimple;
+    DEFAULT,LRU, SLRU,LFU,LFUDA,FIFO,FIFO2nd,TimedLru,TimedSLru,Simple,FIFOSimple;
 }
