@@ -217,7 +217,7 @@ public class LTSPMain {
 										if(whatToRun == 0)
 											InfoPiece="";
 										begin = System.currentTimeMillis();
-										iterations = 0;
+										iterations = 0; // doese it change so you need to reset
 										/// create clustering method
 										Clustering gc = ClusteringFactory.createClustering(ClusteringType.valueOf(cluster));
 

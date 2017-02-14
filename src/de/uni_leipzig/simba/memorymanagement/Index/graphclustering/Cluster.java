@@ -5,6 +5,7 @@
  */
 package de.uni_leipzig.simba.memorymanagement.Index.graphclustering;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,10 +14,15 @@ import java.util.Set;
  * and the corresponding tasks
  * @author ngonga
  */
-public class Cluster {
-    public Set<Node> nodes;
+public class Cluster implements Serializable{
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 2971596577696469083L;
+	public Set<Node> nodes;
     public Set<Edge> edges;
     public int id;
+   
     public Cluster(int number)
     {
         nodes = new HashSet<>();

@@ -4,6 +4,7 @@
  */
 package de.uni_leipzig.simba.memorymanagement.indexing;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -11,8 +12,13 @@ import java.util.regex.Pattern;
  * Simple implementation of an index item
  * @author ngonga
  */
-public class HR3IndexItem extends AbstractIndexItem implements IndexItem, Comparable{
-    int size;
+public class HR3IndexItem extends AbstractIndexItem implements IndexItem, Comparable,Serializable{
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 4928640430926448867L;
+
+	int size;
     
     // Index is simply coordinates of hypercube
     ArrayList<Integer> coordinates;

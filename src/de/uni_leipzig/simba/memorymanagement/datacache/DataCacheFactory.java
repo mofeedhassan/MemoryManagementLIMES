@@ -3,9 +3,9 @@ package de.uni_leipzig.simba.memorymanagement.datacache;
 import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
 public class DataCacheFactory {
-	public static int cacheSize=Integer.MAX_VALUE;
-	public static int evictCount=1;
-	public static int capacity=20;
+	private static int cacheSize=Integer.MAX_VALUE;
+	private static int evictCount=1;
+	private static int capacity=20;
 
 	
 	public static DataCache createCache(CacheType cacheType, int size, int evCount, int Capacity)
@@ -32,15 +32,15 @@ public class DataCacheFactory {
 			return new LfuCache(cacheSize, evictCount, capacity);
 		else if(cacheType.equals(CacheType.LFUDA))
 			return new LfuDACache(cacheSize, evictCount);
-		else if(cacheType.equals(CacheType.FIFO2nd))
+		else if(cacheType.equals(CacheType.FIFO2ND))
 			return new Fifo2ChanceCache(cacheSize, evictCount, capacity);
-		else if(cacheType.equals(CacheType.TimedLru))
+		else if(cacheType.equals(CacheType.TIMEDLRU))
 			return new TimedLruCache(cacheSize, evictCount, capacity);
-		else if (cacheType.equals(CacheType.TimedSLru))
+		else if (cacheType.equals(CacheType.TIMEDSLRU))
 			return new TimedSLruCache(cacheSize, evictCount, capacity);
-		else if (cacheType.equals(CacheType.Simple))
+		else if (cacheType.equals(CacheType.SIMPLE))
 			return new SimpleCache(capacity);
-		else if (cacheType.equals(CacheType.FIFOSimple))
+		else if (cacheType.equals(CacheType.FIFOSIMPLE))
 			return new FIFOSimple(cacheSize, evictCount, capacity);
 		else
 			return new FifoCache(cacheSize, evictCount, capacity);

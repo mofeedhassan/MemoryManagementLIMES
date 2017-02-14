@@ -31,7 +31,7 @@ import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexer;
-import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelController;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP.ParallelController;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.TSPCachingTester;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.PathFinder;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SimpleSolver;

@@ -4,13 +4,19 @@
  */
 package de.uni_leipzig.simba.memorymanagement.Index.graphclustering;
 
+import java.io.Serializable;
+
 /**
  * Weighted edge in a graph
  * @author ngonga
  */
-public class Edge implements Comparable {
+public class Edge implements Comparable,Serializable {
 
-    Node source;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 7020759382637312946L;
+	Node source;
 
     public Node getSource() {
         return source;

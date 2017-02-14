@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.lazytsp.serial;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.serial.tests;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,8 +11,14 @@ import org.apache.log4j.Logger;
 import de.uni_leipzig.simba.GeoCache.io.FileOperations;
 import de.uni_leipzig.simba.memorymanagement.datacache.AbstractCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.Item;
 import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
+/**
+ * 
+ * @author mofeed
+ * class that tests a cache type
+ */
 public class CacheTester {
     public static Logger          log4j      = Logger.getLogger(CacheTester.class);
 
@@ -23,6 +29,7 @@ public class CacheTester {
 	static String dataFile ="";
 	static int cacheHit =0;
 	static int cacheMiss =0; 
+	
 	public static void main(String[] args) {
 		type = args[0];
 		size = Integer.parseInt(args[1]);

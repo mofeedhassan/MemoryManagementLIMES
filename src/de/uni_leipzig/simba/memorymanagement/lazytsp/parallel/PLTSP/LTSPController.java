@@ -30,8 +30,8 @@ import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationComma
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
-import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelController;
-import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelRunner;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP.ParallelController;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP.ParallelRunner;
 import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
 public class LTSPController {
@@ -41,7 +41,7 @@ public class LTSPController {
 	
 	//////Cache data for both cases shared cache or individual caches
 	private DataCache cache=null; //The capacity object to bes used by tasks(in case of cache/task(s) - lock as common)
-	private String cacheName=""; //the cache name to be created
+	private String cacheName="FIFO"; //the cache name to be created
 	private int capacity=0; // the capacity of cache to be created for each task (in case of cache/task)
 	private boolean shared=false;
 	//Indexer of the data used, passed as parameter from the main()
@@ -58,9 +58,12 @@ public class LTSPController {
 	public int[] clustersIds=null;
 
 	////////////////////////////////////////////////    OUTPUTS   /////////////////////////////////
-    Map<Integer,Mapping> mappings = new HashMap<Integer, Mapping>();
-    int numberOfMappings=0; //lock as common when update the number of mappings
-    Map<Integer,Double> runTimes = new HashMap<Integer, Double>(); //lock as common when update the runtimes
+	//The outputs are returned through string returned from submit into future it contains mappings
+	
+	
+   // Map<Integer,Mapping> mappings = new HashMap<Integer, Mapping>();
+    //int numberOfMappings=0; //lock as common when update the number of mappings
+    //Map<Integer,Double> runTimes = new HashMap<Integer, Double>(); //lock as common when update the runtimes
     static LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands = new LinkedHashMap<Integer, List<DataManipulationCommand>>();
     
 	public /*static*/ List<String> results = new ArrayList<String>();
@@ -84,6 +87,7 @@ public class LTSPController {
 
     /**
      * This constructor is used to get the basic information required to start the threads for parallel execution of the tasks
+     * It is used in case of SHARED cache
      * @param clustersCommands The list of the clusters and their associated data manipulation commands
      * @param cache The cache required for each task to store and retrieve the computed mapping
      * @param capacity The cache capacity of data items
@@ -91,7 +95,27 @@ public class LTSPController {
      * @param measure The similarity measure used in computing the mappings. It is either Euclidean or  
      * @param threshold The threshold
      */
-	public LTSPController(LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands,String cache,int capacity,Indexer indexer, Measure measure,Double threshold, boolean shared,int NoProcessors){
+	public LTSPController(LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands,DataCache cache,int capacity,Indexer indexer, Measure measure,Double threshold, boolean shared,int NoProcessors){
+		this.clustersCommands=clustersCommands;		// it is static but each time in the constructor it is assigned to new set of commands for the new repeat
+		this.cache = cache;
+		this.capacity = capacity;
+		this.indexer = indexer;
+		this.measure=measure;
+		this.threshold=threshold;
+		this.shared=shared;
+		/*numberOfProcessors =NoProcessors;
+		pool = Executors.newFixedThreadPool(numberOfProcessors);*/
+	}
+	  /**
+     * This constructor is used to get the basic information required to start the threads for parallel execution of the tasks
+     * It is used in case of NON-SHARED cache
+     * @param clustersCommands The list of the clusters and their associated data manipulation commands
+     * @param cache The cache required for each task to store and retrieve the computed mapping
+     * @param capacity The cache capacity of data items
+     * @param indexer It is used to retrieve a computationally required data item from the data set. It is either trigram or hr3
+     * @param measure The similarity measure used in computing the mappings. It is either Euclidean or  
+     * @param threshold The threshold
+     */	public LTSPController(LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands,String cache,int capacity,Indexer indexer, Measure measure,Double threshold, boolean shared,int NoProcessors){
 		this.clustersCommands=clustersCommands;		// it is static but each time in the constructor it is assigned to new set of commands for the new repeat
 		this.cacheName = cache;
 		this.capacity = capacity;
@@ -176,13 +200,19 @@ public class LTSPController {
 				{*/
 					//System.out.println("#Threads "+Thread.getAllStackTraces().keySet().size());
 					if(!shared || getCache() == null) // if it is not shared || the first creation of a shared cache
+					{
 						cache = DataCacheFactory.createCache(CacheType.valueOf(cacheName), Integer.MAX_VALUE, 1,capacity);//create new cache object
+						System.out.println("**ATTENTION**This part creates NON-SHARED caches. It is preceeded by using the constructor specified for sharing cache. In case of not using it the defaul is FIFO");
+					}
+					
 					int currentCluster = clustersIds[clusterId];
 					List<DataManipulationCommand> commands  = clustersCommands.get(currentCluster/*clusterId*/);//get a cluster's commands set
 					logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runParallelTasks(): assign to a task cluster Id = "+currentCluster+", commands = "+commands+" :"+ System.currentTimeMillis());
 					
-					LTSPTask task = new LTSPTask(getCache(), commands, measure, threshold, indexer);// crate a task and assign the commands set and the cache
-					task.setClusterId(clusterId++);
+					//LTSPTask task = new LTSPTask(getCache(), commands, measure, threshold, indexer);// crate a task and assign the commands set and the cache
+					ParallelRunner task = new ParallelRunner(getCache(), commands, measure, threshold, indexer);// crate a task and assign the commands set and the cache
+
+					//task.setClusterId(clusterId++);
 					futures.add(pool.submit(task));//send to parallelism
 					
 					//System.out.println("#Threads "+Thread.getAllStackTraces().keySet().size());
@@ -230,7 +260,12 @@ public class LTSPController {
 				ParallelRunner runner = new ParallelRunner(clusterId);
 				//assign the parameter to it
 				//run the thread
-				runner.start();
+				try {
+					runner.call();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			
 				while(getNumberOfProcessors() == 0) ;
 				//while(true){//lock n if(n!=0) break; unlock n)}

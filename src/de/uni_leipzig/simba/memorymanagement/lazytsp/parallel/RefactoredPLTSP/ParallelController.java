@@ -1,16 +1,22 @@
-package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import de.uni_leipzig.simba.data.Mapping;
 import de.uni_leipzig.simba.measures.Measure;
+import de.uni_leipzig.simba.measures.space.EuclideanMetric;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationCommand;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
+import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
 import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 
@@ -32,11 +38,19 @@ public class ParallelController {
 	private static Map<Integer,String> resultsCollector = new HashMap<Integer, String>();
 
 	////////////////////////////////////////////////    OUTPUTS   /////////////////////////////////
-    Map<Integer,Mapping> mappings = new HashMap<Integer, Mapping>();
+    Map<Integer,Mapping> mappings = new HashMap<Integer, Mapping>();//cluster,mappings
     int numberOfMappings=0; //lock as common when update the number of mappings
     Map<Integer,Double> runTimes = new HashMap<Integer, Double>(); //lock as common when update the runtimes
     static LinkedHashMap<Integer,List<DataManipulationCommand>> clustersCommands = new LinkedHashMap<Integer, List<DataManipulationCommand>>();
     private int clusterId=0;
+    ///////////////////////////////////////////////
+	private static final ExecutorService pool =  Executors.newFixedThreadPool(getNumberOfProcessors());
+	public /*static*/ List<String> results = new ArrayList<String>();
+	public /*static*/ List<String> cacheHitsValues = new ArrayList<String>();
+	public /*static*/ List<String> cacheMissesValues = new ArrayList<String>();
+	public int[] clustersIds=null;
+
+	
     /**
 	 * @return the cache
 	 */
@@ -52,15 +66,25 @@ public class ParallelController {
 		return resultsCollector;
 	}
 
-	public ParallelController(){}
+	public ParallelController(LinkedHashMap<Integer, List<DataManipulationCommand>> clustersCommands, DataCache cache, Integer capacity, Hr3Indexer indexer, Measure measure, Double threshold, boolean share, int numberOfProcessors)
+	{
+		this.clustersCommands=clustersCommands;
+		this.cache = cache;
+		this.capacity = capacity;
+		this.indexer = indexer;
+		this.measure=measure;
+		this.threshold=threshold;
+		this.shared=share;
+		this.numberOfProcessors=numberOfProcessors;
+	}
     // This constructor is called in case of a common cache object is used among the tasks
-	/*public ParallelController(DataCache cache,Indexer indexer, Measure measure,Double threshold, int numberOfProcessors){
+	public ParallelController(DataCache cache,Indexer indexer, Measure measure,Double threshold, int numberOfProcessors){
 		this.cache=cache; // this is a common cache for all
 		this.threshold=threshold;
 		this.indexer = indexer;
 		this.measure=measure;
 		this.setNumberOfProcessors(numberOfProcessors);
-	}*/
+	}
 	
     /**
      * This constructor is used to get the basic information required to start the threads for parallel execution of the tasks
@@ -80,6 +104,55 @@ public class ParallelController {
 		this.threshold=threshold;
 	}
 	
+	/**
+	 * This method is responsible for creating the threads where the parallel tasks are executed
+	 * @param clustersCommands The list of commands to be executed grouped by clusters id
+	 * @param singleCache It specifies if the cache will be a single shared objject or multiple individual objects for the task
+	 */
+	public void runParallelTasks()
+	{
+		int NrProcessors = getNumberOfProcessors();
+		
+		if(NrProcessors > 0)
+		{
+			List<Future<String>> futures = new ArrayList<>();
+			//logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runParallelTasks() :"+ System.currentTimeMillis());
+
+			for(int clusterId = 0; clusterId < clustersCommands.size();clusterId++)
+			{
+
+					if(!shared || getCache() == null) // if it is not shared || the first creation of a shared cache
+					{
+						cache = DataCacheFactory.createCache(CacheType.valueOf(cacheName), Integer.MAX_VALUE, 1,capacity);//create new cache object
+						System.out.println("**ATTENTION**This part creates NON-SHARED caches. It is preceeded by using the constructor specified for sharing cache. In case of not using it the defaul is FIFO");
+					}
+					
+					int currentCluster = clustersIds[clusterId];
+					List<DataManipulationCommand> commands  = clustersCommands.get(currentCluster);//get a cluster's commands set
+					//logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runParallelTasks(): assign to a task cluster Id = "+currentCluster+", commands = "+commands+" :"+ System.currentTimeMillis());
+					
+					ParallelRunner task = new ParallelRunner(getCache(), commands, measure, threshold, indexer);// create a task and assign the commands set and the cache
+
+					futures.add(pool.submit(task));//send to parallelism
+				//}
+			}
+			
+			int totalMappings=0;
+			for(Future<String> future: futures)
+			{
+				try
+				{
+					results.add(future.get());//add the task as clusterId,threadRunTime,mappings
+					cacheHitsValues.add(String.valueOf(cache.getHits())); //#hits when the thread executes in this moment (not total)
+					cacheMissesValues.add(String.valueOf(cache.getMisses())); //#misses when the thread executes in this moment (not total)
+				}
+				catch (InterruptedException | ExecutionException e) {e.printStackTrace();}
+			}			
+			pool.shutdown(); 
+		}
+	}
+	
+	
 	LinkedHashMap<Integer,List<DataManipulationCommand>> getClustersCommands() {
 		return clustersCommands;
 	}
@@ -94,20 +167,21 @@ public class ParallelController {
 	 * @param result : String represents the task results combined and separated by colon : and it includes
 	 * the start runtime, the end runtime and  the number of mappings
 	 */
-	synchronized public static void addToResultsCollector(int clusterId, String result){getResultsCollector().put(clusterId, result);}
+	synchronized public static void addToResultsCollector(int clusterId, String result)
+	{getResultsCollector().put(clusterId, result);}
 	
 	/**
 	 * This method gives the list of commands based on a given cluster's id
 	 * @param clusterId : int represents the cluster id in focus
 	 * @return List<DataManipulationCommand> : the list of the data manipulation commands associated with the cluster
 	 */
-	synchronized List<DataManipulationCommand> getClusterCommands(Integer clusterId)
+	List<DataManipulationCommand> getClusterCommands(Integer clusterId)
 	{ return clustersCommands.get(clusterId);}
 	/**
 	 * This method shows if there is a free processor to be assigned new task. IT is called by the controller
 	 * @return true if there is a free processor and false otherwise
 	 */
-	synchronized boolean checkFreeProcessor()
+	synchronized static boolean  checkFreeProcessor()
 	{return (getNumberOfProcessors()!=0);}
 	
 	/**
@@ -171,7 +245,12 @@ public class ParallelController {
 					List<DataManipulationCommand> commands  = clustersCommands.get(clusterId);
 					ParallelRunner task = new ParallelRunner(getCache(), commands, measure, threshold, indexer);
 					task.setClusterId(clusterId++);
-					task.run();
+					try {
+						task.call();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					//System.out.println("#Threads "+Thread.getAllStackTraces().keySet().size());
 					updateNoProcessors('-');// the controller decrements the number of processors when thread started
 					if(clusterId == clustersCommands.size())
@@ -210,7 +289,12 @@ public class ParallelController {
 				ParallelRunner runner = new ParallelRunner(clusterId);
 				//assign the parameter to it
 				//run the thread
-				runner.start();
+				try {
+					runner.call();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			
 				while(getNumberOfProcessors() == 0) ;
 				//while(true){//lock n if(n!=0) break; unlock n)}

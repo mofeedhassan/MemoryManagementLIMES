@@ -9,8 +9,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ConcurrentUtils;
-import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.SortedSolvertmp;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.utilities.ConcurrentUtils;
 
 public class ExecuterTest {
 	public static int NUM_JOBS_TO_CREATE =10;

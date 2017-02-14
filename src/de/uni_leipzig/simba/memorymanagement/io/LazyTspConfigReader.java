@@ -13,7 +13,9 @@ public class LazyTspConfigReader {
 	private static final LazyTspConfigReader instance = new LazyTspConfigReader();
 	private final Properties configProp = new Properties();
 
-	private LazyTspConfigReader(){loadParams();}
+	private LazyTspConfigReader()
+	{loadParams();}
+	
 	public static LazyTspConfigReader getInstance(){return instance;} 
 	
 	public void loadParams() {

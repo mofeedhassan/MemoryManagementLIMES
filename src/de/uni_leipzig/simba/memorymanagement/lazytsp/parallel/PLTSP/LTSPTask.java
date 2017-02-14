@@ -19,7 +19,7 @@ import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationComma
 import de.uni_leipzig.simba.memorymanagement.Index.planner.execution.CacheAccessExecution;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.indexing.Indexer;
-import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.ParallelController;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP.ParallelController;
 
 public class LTSPTask implements Callable<String>{
 	static java.util.logging.Logger logger = Logger.getLogger("LIMES"); 

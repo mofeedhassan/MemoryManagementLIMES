@@ -1,4 +1,4 @@
-package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel;
+package de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.tests;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,7 +57,7 @@ public class SortedSolvertmp implements PathFinder{
         //printMatrix(matrix);
         return matrix;
     }
-    
+    // returns the edges sorted by weight with each edge associated with its nodes
     public Object[] sortingDistances(double[][] matrix){
     	//int[] sortedClusters = new int [clustersSize];
     	ArrayList<Integer> sortedClusters = new ArrayList<Integer>();

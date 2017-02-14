@@ -4,6 +4,8 @@
  */
 package de.uni_leipzig.simba.memorymanagement.Index.graphclustering;
 
+import java.io.Serializable;
+
 import de.uni_leipzig.simba.memorymanagement.indexing.AbstractIndexItem;
 import de.uni_leipzig.simba.memorymanagement.indexing.IndexItem;
 
@@ -11,9 +13,13 @@ import de.uni_leipzig.simba.memorymanagement.indexing.IndexItem;
  *
  * @author ngonga
  */
-public class Node implements Comparable {
+public class Node implements Comparable,Serializable {
 
-    IndexItem item;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1651457970878326148L;
+	IndexItem item;
 
     public Node(IndexItem ii) {
         item = ii;
