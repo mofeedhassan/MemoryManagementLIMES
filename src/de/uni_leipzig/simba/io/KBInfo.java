@@ -212,15 +212,41 @@ public class KBInfo implements Serializable{
      *
      * @return Class label
      */
-    public String getClassOfendpoint() {
+    
+     public String getClassOfendpoint() {
+    for (String rest : restrictions) {
+        if (rest.matches(".* rdf:type .*")) {
+            String result = rest.substring(rest.indexOf("rdf:type") + 8).replaceAll("<", "").replaceAll(">", "").trim();
+            return result;
+        }
+    }
+    return null;
+}
+/*    public List<String> getClassOfendpoint() {
+    	List<String> classes= new ArrayList<>();
+    	
         for (String rest : restrictions) {
-            if (rest.matches(".* rdf:type .*")) {
-                String result = rest.substring(rest.indexOf("rdf:type") + 8).replaceAll("<", "").replaceAll(">", "").trim();
-                return result;
+        	if(rest.toLowerCase().contains("union"))// multiple restrictions and classes
+        	{
+        		String[] restClasses =  rest.toLowerCase().split("union");
+        		for (String restClass : restClasses) {
+        			if (rest.matches(".* rdf:type .*"))
+        			{
+        				String result =restClass.substring(restClass.indexOf("rdf:type") + 8).replaceAll("<", "").replaceAll(">", "").trim();
+        				classes.add(result);
+        			}
+				}
+        	}
+        	else // atomic restriction 
+        		if (rest.matches(".* rdf:type .*")) {
+                  String result = rest.substring(rest.indexOf("rdf:type") + 8).replaceAll("<", "").replaceAll(">", "").trim();
+                  classes.add(result);
             }
         }
-        return null;
-    }
+        
+        return classes;
+    }*/
+
 
       /** Returns the class contained in the restriction
      *
@@ -228,7 +254,8 @@ public class KBInfo implements Serializable{
      */
     public String getClassOfendpoint(boolean expanded) {
         for (String rest : restrictions) {
-            if (rest.matches(".* rdf:type .*")) {
+        	
+        	if (rest.matches(".* rdf:type .*")) {
                 String result = rest.substring(rest.indexOf("rdf:type") + 8).replaceAll("<", "").replaceAll(">", "").trim();
                 if(!expanded) return result;
                 else

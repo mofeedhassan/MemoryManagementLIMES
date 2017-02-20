@@ -10,8 +10,11 @@ import de.uni_leipzig.simba.cache.Cache;
 import de.uni_leipzig.simba.cache.HybridCache;
 import de.uni_leipzig.simba.data.Mapping;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import de.uni_leipzig.simba.transferlearningbest.transfer.config.Configuration;
 import de.uni_leipzig.simba.transferlearningbest.util.Execution;
@@ -25,9 +28,58 @@ public class LabelBasedClassSimilarity implements ClassSimilarity{
     public int SAMPLING_RATE = 100;
     public double THRESHOLD = 0.25;
     public static Map<String, String> prefixes = new HashMap<String, String>();
+    static Logger logger = Logger.getLogger("LIMES");
 
     private static Cache getLabels(String c, String endpoint) {
         Cache cache = new HybridCache();
+        String folder=System.getProperty("user.dir"); //check it
+    	// 1. Try to get content from a serialization
+    	String hash = c.hashCode() + endpoint.hashCode() + "";
+
+    	File cacheFile = new File(folder + File.separatorChar + "labelcache/" + hash + ".ser");
+    	logger.info("Checking for class label file " + cacheFile.getAbsolutePath());
+    	try {
+    	    if (cacheFile.exists()) {
+    		logger.info("Found cached class label data. Loading data from file " + cacheFile.getAbsolutePath());
+    		cache = HybridCache.loadFromFile(cacheFile);
+    	    }
+    	    if (cache.size() == 0) {
+    		throw new Exception();
+    	    } else {
+    		logger.info("Cached class label data loaded successfully from file " + cacheFile.getAbsolutePath());
+    		logger.info("Size = " + cache.size());
+    	    }
+    	} // 2. If it does not work, then get it from data sourceInfo as
+    	  // specified
+    	catch (Exception e) {
+    	    // e.printStackTrace();
+    	    // need to add a QueryModuleFactory
+    	    logger.info("No cached class label data found for " + c + " from "+ endpoint);
+    	    String query = "SELECT ?l "
+                    + "WHERE { <"+c+"> <http://www.w3.org/2000/01/rdf-schema#label> ?l. }";
+            
+    	    Query sparqlQuery = QueryFactory.create(query);
+            QueryExecution qexec;
+            qexec = QueryExecutionFactory.sparqlService(endpoint, sparqlQuery);
+            ResultSet results = qexec.execSelect();
+
+            String x, a, b;
+            QuerySolution soln;
+            while (results.hasNext()) {
+                soln = results.nextSolution();
+                if (soln.get("l").isLiteral()) {
+                    cache.addTriple(c, "p", ((Literal) soln.get("l")).getLexicalForm());
+                }
+            }
+    	    if (!new File(folder + File.separatorChar + "labelcache").exists()  || !new File(folder + File.separatorChar + "labelcache").isDirectory()) 
+    	    {
+    	    	new File(folder + File.separatorChar + "labelcache").mkdir();
+    	    }
+    	    ((HybridCache)cache).saveToFile(new File(folder + File.separatorChar + "labelcache/" + hash + ".ser"));
+    	}
+    	
+        /*//check the combined code if the file exist
+        // if exist load the data into cache and return it
         String query = "SELECT ?l "
                 + "WHERE { <"+c+"> <http://www.w3.org/2000/01/rdf-schema#label> ?l. }";
         Query sparqlQuery = QueryFactory.create(query);
@@ -43,7 +95,8 @@ public class LabelBasedClassSimilarity implements ClassSimilarity{
             if (soln.get("l").isLiteral()) {
                 cache.addTriple(c, "p", ((Literal) soln.get("l")).getLexicalForm());
             }
-        }
+        }*/
+        //serialize cache
         return cache;
     }
 
@@ -77,7 +130,7 @@ public class LabelBasedClassSimilarity implements ClassSimilarity{
     }
     
 	@Override
-	public double getSimilarity(String class1, String class2, Configuration config1, Configuration config2,boolean isSource) {
+	public double getSimilarity(String class1,  Configuration config1,String class2, Configuration config2,boolean isSource) {
 		if (class1 == null || class2 == null) {
             System.err.println("One of " + class1 + " and " + class2 + " is " + null);
             return 0D;
@@ -103,7 +156,7 @@ public class LabelBasedClassSimilarity implements ClassSimilarity{
     	if(source != null && target != null)
     	{
     		 Mapping m = Execution.execute(source, target, "trigrams", THRESHOLD);
-    	        System.out.println(source+"\n"+target+"\n"+m);
+    	        System.out.println(source+"\n"+target+"\n"+m.size);
     	        double sim = 0.0;
     	        //we could use max, min instead
     	        //could also

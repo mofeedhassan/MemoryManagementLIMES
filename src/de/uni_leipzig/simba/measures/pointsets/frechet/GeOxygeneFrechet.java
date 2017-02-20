@@ -72,7 +72,7 @@ public class GeOxygeneFrechet extends PolygonMeasure implements SetMeasure {
 	}
 
 	/**
-	 * @param X First polygon
+	 * @param LinkedMDB First polygon
 	 * @param Y Second polygon
 	 * @return Distance between the two polygons
 	 */

@@ -217,6 +217,11 @@ public class HybridCache extends MemoryCache implements Serializable {
     public static HybridCache loadFromFile(File file) throws IOException {
 	String path = file.getAbsolutePath();
 	String parentPath = path.substring(0, path.lastIndexOf("cache"));
+	//this line is added to support the existence of other types of caching folders, 
+	//such as labelcach and samplecache used by transfer learning to cache class labels or data samples.
+	// it does not ruin the original functionality
+	parentPath = parentPath.substring(0, parentPath.lastIndexOf("/")+1); 
+
 	File parent = new File(parentPath);
 
 	FileInputStream in = new FileInputStream(file);

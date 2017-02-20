@@ -25,7 +25,7 @@ public class UriBasedClassSimilarity implements ClassSimilarity {
         return new QGramsDistance().getSimilarity(class1, class2);
     }
 	@Override
-	public double getSimilarity(String class1, String class2, Configuration config1, Configuration config2,boolean isSource) {
+	public double getSimilarity(String class1,  Configuration config1, String class2,Configuration config2,boolean isSource) {
         if (class1 == null || class2 == null) {
             System.err.println("One of " + class1 + " and " + class2 + " is " + null);
             return 0D;

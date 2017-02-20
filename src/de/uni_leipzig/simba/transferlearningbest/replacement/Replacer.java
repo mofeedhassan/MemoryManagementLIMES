@@ -42,8 +42,18 @@ public class Replacer {
 
         String nameSpace = "";
         String shortName="";
+        String[] shortnames;
+        Map<String,String> cascadingShortnames = new HashMap<String, String>();
         //property="http://www.w3.org/2003/01/geo/wgs84_pos#property";
-        if (property.contains("#")) {// http://debpedia.org#property
+        if(property.matches(".+:.+/.+:.+"))
+        {
+        	shortnames= property.split(":|/");
+        	for(int i=0; i < shortnames.length;i++)
+        		if(i%2==0)
+        			cascadingShortnames.put(shortnames[i], "");
+        }
+        	
+        else if (property.contains("#")) {// http://debpedia.org#property
             nameSpace = property.substring(0, property.indexOf("#") + 1);
             property = property.substring(property.indexOf("#") + 1);
             shortName = getShortName(config, goalConfig, nameSpace);
@@ -87,8 +97,18 @@ public class Replacer {
                 }
                 else //already was shortend
                 {
-                	goalConfig.source.prefixes.put(shortName, config.source.prefixes.get(shortName));
-                    goalConfig.target.prefixes.put(shortName, config.source.prefixes.get(shortName));
+                	if(property.matches(".+:.+/.+:.+")) //cascading properties
+                	{
+                		for (String cshortName : cascadingShortnames.keySet()) {
+                			goalConfig.source.prefixes.put(cshortName, config.source.prefixes.get(cshortName));
+                    		goalConfig.target.prefixes.put(cshortName, config.source.prefixes.get(cshortName));
+						}
+                	}
+                	else
+                	{
+                		goalConfig.source.prefixes.put(shortName, config.source.prefixes.get(shortName));
+                		goalConfig.target.prefixes.put(shortName, config.source.prefixes.get(shortName));
+                	}
                 }
                 
             }
@@ -109,8 +129,19 @@ public class Replacer {
                 }
                 else //already was shortend
                 {
-                	goalConfig.target.prefixes.put(shortName, config.target.prefixes.get(shortName));
-                	goalConfig.source.prefixes.put(shortName, config.target.prefixes.get(shortName));
+                	if(property.matches(".+:.+/.+:.+")) //cascading properties
+                	{
+                		for (String cshortName : cascadingShortnames.keySet()) {
+                			goalConfig.target.prefixes.put(cshortName, config.target.prefixes.get(cshortName));
+                    		goalConfig.source.prefixes.put(cshortName, config.target.prefixes.get(cshortName));
+						}
+                	}
+                	else
+                	{
+                		goalConfig.target.prefixes.put(shortName, config.target.prefixes.get(shortName));
+                    	goalConfig.source.prefixes.put(shortName, config.target.prefixes.get(shortName));
+                	}
+                	
                 }
             }
         }

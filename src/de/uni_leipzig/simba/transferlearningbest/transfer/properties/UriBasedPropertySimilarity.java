@@ -19,10 +19,10 @@ public class UriBasedPropertySimilarity implements PropertySimilarity{
         String p2 = cleanUri(property2);
         return new QGramsDistance().getSimilarity(p1, p2);
     }
-
+//(String property1, String property2, String class1, String class2, Configuration config)
 	@Override
-	public double getSimilarity(String property1, String property2, String class1, String class2, Configuration config1,
-			Configuration config2) {
+	public double getSimilarity(String property1, String class1,Configuration config1,String property2,  String class2, 
+			Configuration config2, boolean isSource) {
 		return getSimilarity(property1, property2, class1, class2, config1);
 	}
 	
@@ -33,8 +33,13 @@ public class UriBasedPropertySimilarity implements PropertySimilarity{
         if (propertyLabel.contains("#")) {
             propertyLabel = propertyLabel.substring(propertyLabel.indexOf("#") + 1);
         }
+        if (propertyLabel.contains(":")) {
+            propertyLabel = propertyLabel.substring(propertyLabel.indexOf(":") + 1);
+        }
         return propertyLabel;
     }
+
+
 
 
 }

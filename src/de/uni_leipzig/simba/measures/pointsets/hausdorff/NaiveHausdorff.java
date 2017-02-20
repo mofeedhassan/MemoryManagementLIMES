@@ -30,7 +30,7 @@ public class NaiveHausdorff extends PolygonMeasure implements SetMeasure {
      * Brute force approach to computing the SetMeasure distance between two
      * polygons
      *
-     * @param X First polygon
+     * @param LinkedMDB First polygon
      * @param Y Second polygon
      * @return Distance between the two polygons
      */

@@ -4,8 +4,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import de.uni_leipzig.simba.memorymanagement.parallel.PLTSP.LTSPMain;
-import de.uni_leipzig.simba.memorymanagement.testTSPCaching.TSPCachingTester;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.PLTSP.LTSPMain;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.serial.TSPCachingTester;
 
 public class LTSPMainTest {
 

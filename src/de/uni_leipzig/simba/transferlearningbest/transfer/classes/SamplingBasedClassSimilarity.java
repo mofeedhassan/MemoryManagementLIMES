@@ -4,6 +4,10 @@
  */
 package de.uni_leipzig.simba.transferlearningbest.transfer.classes;
 
+import java.io.File;
+
+import org.apache.log4j.Logger;
+
 import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Literal;
 import de.uni_leipzig.simba.cache.Cache;
@@ -21,23 +25,47 @@ public class SamplingBasedClassSimilarity implements ClassSimilarity {
 
     public int SAMPLING_RATE = 200;
     public double THRESHOLD = 0.5;
+    static Logger logger = Logger.getLogger("LIMES");
 
     private static Cache getPropertyValues(String c, String endpoint, int size) {
         Cache cache = new HybridCache();
-        String query;
+        String folder=System.getProperty("user.dir"); //check it
+    	// 1. Try to get content from a serialization
+    	String hash = c.hashCode() + endpoint.hashCode() + new Integer(size).hashCode()+"";
+
+    	File cacheFile = new File(folder  + File.separatorChar +"samplecache/" + hash + ".ser");
+    	logger.info("Checking for class label file " + cacheFile.getAbsolutePath());
+    	try {
+    	    if (cacheFile.exists()) {
+    		logger.info("Found cached class sample data. Loading data from file " + cacheFile.getAbsolutePath());
+    		cache = HybridCache.loadFromFile(cacheFile);
+    	    }
+    	    if (cache.size() == 0) {
+    		throw new Exception();
+    	    } else {
+    		logger.info("Cached class sample data loaded successfully from file " + cacheFile.getAbsolutePath());
+    		logger.info("Size = " + cache.size());
+    	    }
+    	} // 2. If it does not work, then get it from data sourceInfo as
+    	  // specified
+    	catch (Exception e) {
+    	    // e.printStackTrace();
+    	    // need to add a QueryModuleFactory
+    	    logger.info("No cached class sample data found for " + c + " from "+ endpoint);
+    	    String query;
         if(c.startsWith("http")) query = "SELECT ?x ?a "
                 + "WHERE { ?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <" + c + ">. "
-                + "?a ?p ?x .} LIMIT " + size;
+                + "?a ?p ?x . FILTER(isLiteral(?x)) } LIMIT " + size;
         else query = "SELECT ?x ?a "
                 + "WHERE { ?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " + c + ". "
-                + "?a ?p ?x .} LIMIT " + size;
+                + "?a ?p ?x . FILTER(isLiteral(?x))} LIMIT " + size;
+
         Query sparqlQuery = QueryFactory.create(query);
 
         QueryExecution qexec;
-        System.out.println(endpoint);
+        //System.out.println(endpoint);
         qexec = QueryExecutionFactory.sparqlService(endpoint, sparqlQuery);
-        if(query.contains("http://dbpedia.org/ontology/Country"))
-            System.out.println(sparqlQuery);
+       // if(query.contains("http://dbpedia.org/ontology/Country"))
 
         ResultSet results = qexec.execSelect();
 
@@ -49,6 +77,42 @@ public class SamplingBasedClassSimilarity implements ClassSimilarity {
                 cache.addTriple(soln.get("a").toString(), "p", ((Literal) soln.get("x")).getLexicalForm());
             }
         }
+
+    	    if (!new File(folder + File.separatorChar + "samplecache").exists()  || !new File(folder + File.separatorChar + "samplecache").isDirectory()) 
+    	    {
+    	    	new File(folder + File.separatorChar + "samplecache").mkdir();
+    	    }
+    	    ((HybridCache)cache).saveToFile(new File(folder + File.separatorChar + "samplecache/" + hash + ".ser"));
+    	}
+    	
+    	////////////////////////////
+        /*Cache cache = new HybridCache();
+        String query;
+        if(c.startsWith("http")) query = "SELECT ?x ?a "
+                + "WHERE { ?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <" + c + ">. "
+                + "?a ?p ?x . FILTER(isLiteral(?x)) } LIMIT " + size;
+        else query = "SELECT ?x ?a "
+                + "WHERE { ?a <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> " + c + ". "
+                + "?a ?p ?x . FILTER(isLiteral(?x))} LIMIT " + size;
+        System.out.println(query);
+
+        Query sparqlQuery = QueryFactory.create(query);
+
+        QueryExecution qexec;
+        //System.out.println(endpoint);
+        qexec = QueryExecutionFactory.sparqlService(endpoint, sparqlQuery);
+       // if(query.contains("http://dbpedia.org/ontology/Country"))
+
+        ResultSet results = qexec.execSelect();
+
+        String x, a, b;
+        QuerySolution soln;
+        while (results.hasNext()) {
+            soln = results.nextSolution();
+            if (soln.get("x").isLiteral()) {
+                cache.addTriple(soln.get("a").toString(), "p", ((Literal) soln.get("x")).getLexicalForm());
+            }
+        }*/
         return cache;
     }
 
@@ -79,7 +143,7 @@ public class SamplingBasedClassSimilarity implements ClassSimilarity {
     }
     
 	@Override
-	public double getSimilarity(String class1, String class2, Configuration config1, Configuration config2,boolean isSource) {
+	public double getSimilarity(String class1,  Configuration config1, String class2, Configuration config2,boolean isSource) {
 		
 		String c1 = SamplingBasedPropertySimilarity.expand(class1, config2);
         String c2 = SamplingBasedPropertySimilarity.expand(class2, config2);

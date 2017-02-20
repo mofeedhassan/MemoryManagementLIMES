@@ -43,7 +43,7 @@ public class NaiveFrechet implements SetMeasure{
 	/**
 	 * Brute force approach to computing the Frechet distance between two polygons
 	 *
-	 * @param X First polygon
+	 * @param LinkedMDB First polygon
 	 * @param Y Second polygon
 	 * @return Distance between the two polygons
 	 */

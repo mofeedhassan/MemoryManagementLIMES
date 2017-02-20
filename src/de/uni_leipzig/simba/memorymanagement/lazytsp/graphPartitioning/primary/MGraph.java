@@ -27,12 +27,16 @@ public class MGraph {
 	//fine graph structures
 	public Map<Integer,Integer> nodeWeights = new HashMap<>();
 	public Map<Integer,Map<Integer,Integer>> edgesWeights = new HashMap<>();
-	
+	public Map<Integer,Integer> isolatedNodeWeights = new HashMap<>();
+
 	//coarsened graph
 	
 	public Map<Integer,Integer> coarsenedNodeWeights = new HashMap<>();
 	public Map<Integer,Map<Integer,Integer>> coarsenedEdgesWeights = new HashMap<>();
 	public Map<Integer,Set<Integer>> coarsenedNodesContainedNodes = new HashMap<>();
+	public Map<Integer,Integer> isolatedCoarsenedNodeWeights = new HashMap<>();
+
+
 	
 	//matching map
 	public Map<Integer,Boolean> matching = new HashMap<>();
@@ -107,6 +111,80 @@ public class MGraph {
 					}
 					
 			 }
+			 
+			 if(coarsenedNodeWeights.size() <= (int)(reduction_factor * nodeWeights.size()))//considering the isolated nodes
+			 {
+				 //sort the coarsened nodes in decending order
+				 List<Entry<Integer, Integer>> coarsenedNodesSortedList = entriesSortedByValuesDesc(coarsenedNodeWeights);
+				 List<Entry<Integer, Integer>> isolatedSortedList = entriesSortedByValuesDesc(isolatedCoarsenedNodeWeights);
+				 
+				 // get node id of the max weight and its weight
+				 int compareToCoarsenedNodeId = coarsenedNodesSortedList.get(0).getKey();
+				 int compareToCoarsenedNodeWeight = coarsenedNodesSortedList.get(0).getValue();
+				 
+				 int isolatedIndex=0;
+				 int isolatedNodeId=-1;
+				 
+				 //iterate over coarsened nodes except the max one
+				 for(int i=1; i< coarsenedNodesSortedList.size() ;i++)
+				 {
+					 // get the compared coarsened nodes starting with the second max one
+					 int nodeId = coarsenedNodesSortedList.get(i).getKey();
+					 int nodeWeight = coarsenedNodesSortedList.get(i).getValue();
+					 
+					 //add isolated node as long they get close to the max coarsened node size
+					 while((compareToCoarsenedNodeWeight - coarsenedNodeWeights.get(nodeId)) > 5 && isolatedSortedList.size() > 0) // 5 is a margin
+					 {
+						 //get isolated node key
+						 isolatedNodeId = isolatedSortedList.get(0).getKey();
+						 
+						 //add isolated Node to the magnified coarsened node
+						 coarsenedNodesContainedNodes.get(nodeId).add(isolatedNodeId);
+						 
+						 //remove the isolated node from the coarsened nodes map
+						 coarsenedNodesContainedNodes.remove(isolatedNodeId);
+						 
+						 //update the weight
+						 int newWeight = coarsenedNodeWeights.get(nodeId)+isolatedSortedList.get(0).getValue();
+						 coarsenedNodeWeights.put(nodeId,newWeight );
+						 
+						 //add an edge with 0 weight to the new node (isolated)
+						 //coarsenedEdgesWeights.get(nodeId).put(isolatedNodeId, 0);
+						 edgesWeights.get(nodeId).put(isolatedNodeId, 0);
+
+						 
+						 //remove the isolated node
+						 isolatedSortedList.remove(0);
+						 
+					 }
+				 }
+				 // add the rest of isolated nodes to the smallest one in case something is left
+				 int smallestCoarsenedNodeId = coarsenedNodesSortedList.get(coarsenedNodesSortedList.size()-1).getKey();// the smallest coarsened node
+				 
+				 for (Entry<Integer, Integer> isolatedNodeInfo : isolatedSortedList) {
+					//get isolated node key
+					 isolatedNodeId = isolatedSortedList.get(isolatedIndex).getKey();
+					 
+					 //add isolated Node to the magnified coarsened node
+					 coarsenedNodesContainedNodes.get(smallestCoarsenedNodeId).add(isolatedNodeId);
+					 
+					 //remove the isolated node from the coarsened nodes map
+					 coarsenedNodesContainedNodes.remove(isolatedNodeId);
+					 
+					 //update the weight
+					 int newWeight = coarsenedNodeWeights.get(smallestCoarsenedNodeId)+isolatedSortedList.get(isolatedIndex).getValue();
+					 coarsenedNodeWeights.put(smallestCoarsenedNodeId,newWeight );
+					 //coarsenedNodeWeights.put(smallestCoarsenedNodeId,newWeight );
+					 
+					 //add an edge with 0 weight to the new node (isolated)
+					 coarsenedEdgesWeights.get(smallestCoarsenedNodeId).put(isolatedNodeId, 0);
+					 
+				}
+				
+	
+				 break;
+			 }
+			 
 			 merge_count--;
 			 serializecCoarsenedGraph(level);
 		 }
@@ -119,9 +197,11 @@ public class MGraph {
 		 int merge_count= (int)(reduction_factor * nodeWeights.size());
 		 
  
-		 while(merge_count > 0)
+		 while(merge_count > 0 && !coarsenedEdgesWeights.isEmpty())
 		 {
+			 
 			 level++;
+			 //sort connected coarsened nodes by their weights
 			 List<Entry<Integer, Integer>> nodesSortedList = entriesSortedByValues(coarsenedNodeWeights);
 			 
 			 initializeMatching();		 
@@ -131,12 +211,11 @@ public class MGraph {
 				 if(!matching.get(node.getKey())) //not matched yet with a  previous node
 				 {
 					 int nodeId = node.getKey();
-					// int nodeWeight = node.getValue();
-					 
+					 //get its neighbor nodes
 					 Map<Integer, Integer> neighborsEdgesWeights = coarsenedEdgesWeights.get(nodeId);
 					 int maxNeighbor = -1;
 					 int maxedgeWeight=-1;
-					 
+					 //find the neighbor connected by the edge with max. weight
 					 for (Integer neighbor : neighborsEdgesWeights.keySet()) {
 						if(neighborsEdgesWeights.get(neighbor) > maxedgeWeight && !matching.get(neighbor)) //neighbor is not matched yet with a  previous node
 						{
@@ -146,7 +225,7 @@ public class MGraph {
 					}
 					 //maxNeighbor  source
 					 //nodeId target
-					 if(maxNeighbor != -1) //  node to merge is found always merge o the neighbor as it is definitely larger than the node if it is available (match=false)
+					 if(maxNeighbor != -1) //  node to merge is found always merge to the neighbor as it is definitely larger than the node if it is available (match=false)
 					 {
 						//merge the nodes of target into nodes of source
 							Set<Integer> targetContainedNodes = coarsenedNodesContainedNodes.get(nodeId);
@@ -189,11 +268,62 @@ public class MGraph {
 							coarsenedEdgesWeights.remove(nodeId);
 
 					 }
+/*					 else  if(neighborsEdgesWeights.size()==0)// has no neigbor - isolated node
+					 {
+						 int nextNodeInSizeIndex = nodesSortedList.indexOf(node);
+						 int nextNodeInSizeId = nodesSortedList.get(nextNodeInSizeIndex+1).getKey();
+						 
+						//merge the nodes of target into nodes of source
+							Set<Integer> targetContainedNodes = coarsenedNodesContainedNodes.get(nodeId);
+							coarsenedNodesContainedNodes.get(nextNodeInSizeId).addAll(targetContainedNodes);
+							coarsenedNodesContainedNodes.remove(nodeId);
+							
+							//for the isolated node add in th fine graph a 0 weight edge
+							edgesWeights.get(nextNodeInSizeId).put(nodeId, 0);
+							
+							//node weights are updated is updated first NODE={node1, node 2, node 3,...}
+							int newWeight = coarsenedNodeWeights.get(nextNodeInSizeId) + coarsenedNodeWeights.get(nodeId); //calc. new weight
+							coarsenedNodeWeights.put(nextNodeInSizeId, newWeight); //update source node as coarsened
+							coarsenedNodeWeights.remove(nodeId); //remove target node as it is merged into source
+							
+							//mark both as matched
+							matching.put(nextNodeInSizeId, true);
+							matching.put(nodeId, true);
+						 
+					 }*/
 				 }
 			 }
 			 merge_count--;
 			 serializecCoarsenedGraph(level);
 		 }
+		 
+		// all nodes are isolated and not sufficent to reduction ratio
+/*		 if(merge_count > 0) recalc. based on both nodesweighgt n isolated sizes
+		 {
+			 List<Entry<Integer, Integer>> nodesSortedList = entriesSortedByValuesDesc(coarsenedNodeWeights);
+			 List<Entry<Integer, Integer>> nodesIsolatedSortedList = entriesSortedByValues(isolatedNodeWeights);
+			 int  maxWeight = nodesSortedList.get(0).getValue();
+			 int isolatedNodeIndex=0;
+			 for (Entry<Integer, Integer> coarsenedNode : nodesSortedList) {
+				 int coarsenedNodeId = coarsenedNode.getKey();
+				while(coarsenedNodeWeights.get(coarsenedNode.getKey()) < (maxWeight-5) && isolatedNodeIndex < nodesIsolatedSortedList.size())
+				{
+					int id = nodesIsolatedSortedList.get(isolatedNodeIndex).getKey();
+					int weight = nodesIsolatedSortedList.get(isolatedNodeIndex).getValue();
+					
+					coarsenedNodesContainedNodes.get(coarsenedNodeId).add(id);//add its id to the containednode
+					coarsenedNodeWeights.put(coarsenedNodeId, coarsenedNodeWeights.get(coarsenedNodeId)+weight);//update the weight
+					
+					//matching.put(id, true);
+					
+					isolatedNodeIndex++;
+				}
+				if(merge_count <= 0)
+					break;
+			}
+		 }*/
+		 
+
 			return null;
 		}
 	 /**
@@ -280,6 +410,19 @@ public class MGraph {
 	    		
 	    		coarsenedNodesContainedNodes.put(source.id, containedNode);
 	    	}
+	    	//for disconnected nodes
+	    	for(int s=0;s<c.length;s++) 
+	    	{
+	    		int clusterId=clusters.get(s).id;
+	    		if(!nodeWeights.containsKey(clusterId))
+	    		{
+	    			/*nodeWeights.put(clusterId, clusters.get(s).getWeight());
+	    			coarsenedNodeWeights.put(clusterId, clusters.get(s).getWeight());*/
+	    			isolatedCoarsenedNodeWeights.put(clusterId, clusters.get(s).getWeight());
+	    			isolatedNodeWeights.put(clusterId, clusters.get(s).getWeight());
+
+	    		}
+	    	}
 	    	
 	    }
 	    
@@ -319,6 +462,24 @@ public class MGraph {
 	   }
 	   
 	   
+	   static <K,V extends Comparable<? super V>> List<Entry<K, V>> entriesSortedByValuesDesc(Map<K,V> map) 
+	   {
+
+		   List<Entry<K,V>> sortedEntries = new ArrayList<Entry<K,V>>(map.entrySet());
+		   Collections.sort(sortedEntries, new Comparator<Entry<K,V>>() 
+		   {
+	           @Override
+	           public int compare(Entry<K,V> e1, Entry<K,V> e2) 
+	           {
+	               return e2.getValue().compareTo(e1.getValue());
+	           }
+		   }
+				   );
+
+		   return sortedEntries;
+	   }
+	   
+	   
 	   private void serializecCoarsenedGraph(int level)
 	    {
 	        try{
@@ -329,13 +490,16 @@ public class MGraph {
 	        	out = new ObjectOutputStream(new FileOutputStream("MGraphEdgesWeights"+level+".ser"));
 	        	out.writeObject(edgesWeights);
 	        	out.close();
+	        	out = new ObjectOutputStream(new FileOutputStream("MGraphIsolatedNodeWeights"+level+".ser"));
+	        	out.writeObject(isolatedNodeWeights);
+	        	out.close();
 	        	
 	        	
 	        }
 	        catch(IOException e){System.out.println(e.getMessage());}
 	    }
 	   
-	   private void deSerializecCoarsenedGraph(Map<Integer, Integer> nodeWeights, Map<Integer, Map<Integer, Integer>> edgesWeights ,int level)
+	   private void deSerializecCoarsenedGraph(Map<Integer, Integer> nodeWeights, Map<Integer, Map<Integer, Integer>> edgesWeights ,Map<Integer, Integer> isolatedNodeWeights,int level)
 	    {
 	    	try{ 
 				  FileInputStream inputFileStream = new FileInputStream("MGraphNodesWeights"+level+".ser");
@@ -345,6 +509,12 @@ public class MGraph {
 			      inputFileStream.close(); 
 			      
 			      inputFileStream = new FileInputStream("MGraphEdgesWeights"+level+".ser");
+			      objectInputStream = new ObjectInputStream(inputFileStream);
+			      edgesWeights = (Map<Integer, Map<Integer, Integer>>)objectInputStream.readObject();
+			      objectInputStream.close();
+			      inputFileStream.close();
+			      
+			      inputFileStream = new FileInputStream("MGraphIsolatedNodeWeights"+level+".ser");
 			      objectInputStream = new ObjectInputStream(inputFileStream);
 			      edgesWeights = (Map<Integer, Map<Integer, Integer>>)objectInputStream.readObject();
 			      objectInputStream.close();
@@ -409,9 +579,33 @@ public class MGraph {
 	    		
 				nodeInfo=new StringBuilder(); //new string
 				nodeInfo.append(node+"|"+nodesWeights.get(node)+" : "); // add node number and its weight
-				for (Integer edge : edges.keySet()) {
+				if(edges!=null)
+				{
+					for (Integer edge : edges.keySet()) {
 					nodeInfo.append(node+" --> "+edge+"|"+edges.get(edge)+"," );
+					}
 				}
+				else//isolated nodes
+					nodeInfo.append(node+" --> -1|"+0+"," ); //not used any more as next loop do it instead
+					
+				
+				System.out.println(nodeInfo);
+			}
+	    	for (Integer node : isolatedNodeWeights.keySet()) {
+	    		Map<Integer,Integer> edges = edgesWeights.get(node);
+	    		
+				nodeInfo=new StringBuilder(); //new string
+				nodeInfo.append(node+"|"+isolatedNodeWeights.get(node)+" : "); // add node number and its weight
+				if(edges!=null)
+				{
+					for (Integer edge : edges.keySet()) {
+					nodeInfo.append(node+" --> "+edge+"|"+edges.get(edge)+"," );
+					}
+				}
+				else//isolated nodes
+					nodeInfo.append(node+" --> -1|"+0+"," );
+					
+				
 				System.out.println(nodeInfo);
 			}
 	    	System.out.println();

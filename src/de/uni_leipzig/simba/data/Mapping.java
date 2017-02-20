@@ -311,7 +311,7 @@ public class Mapping implements Serializable {
             String split[];
             while (s != null) {
                 //split first line
-                split = s.split(" ");
+                split = s.split("\\s");
                 m.add(split[0].substring(1, split[0].length() - 1), split[2].substring(1, split[2].length() - 1), 1.0);
                 s = reader.readLine();
             }
