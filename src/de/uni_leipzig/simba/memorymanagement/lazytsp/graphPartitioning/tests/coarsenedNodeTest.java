@@ -17,6 +17,7 @@ import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.EdgeGreedyClu
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Graph;
 import de.uni_leipzig.simba.memorymanagement.indexing.HR3IndexItem;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.coarseners.HEV;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.coarseners.HEVSortedEdges;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.structures.ClusterEdge;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.structures.coarsenedGraph;
 
@@ -85,9 +86,7 @@ public class coarsenedNodeTest {
 
 		}
     	System.out.println(g);
-    	HEV coarsen =  new HEV();
-    	g=coarsen.getCorsenedGraph(g);
-    	System.out.println(g);
+    	
 		
 	}
 }
