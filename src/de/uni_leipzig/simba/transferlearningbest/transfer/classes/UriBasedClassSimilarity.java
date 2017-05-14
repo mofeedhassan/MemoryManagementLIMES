@@ -38,13 +38,13 @@ public class UriBasedClassSimilarity implements ClassSimilarity {
 
     public String cleanUri(String classLabel) {
         if (classLabel.contains("/")) {
-            classLabel = classLabel.substring(classLabel.indexOf("/") + 1);
+            classLabel = classLabel.substring(classLabel.lastIndexOf("/") + 1);
         }
         if (classLabel.contains("#")) {
-            classLabel = classLabel.substring(classLabel.indexOf("#") + 1);
+            classLabel = classLabel.substring(classLabel.lastIndexOf("#") + 1);
         }
         if (classLabel.contains(":")) {
-            classLabel = classLabel.substring(classLabel.indexOf(":") + 1);
+            classLabel = classLabel.substring(classLabel.lastIndexOf(":") + 1);
         }
         return classLabel;
     }

@@ -23,7 +23,7 @@ import de.uni_leipzig.simba.transferlearningbest.util.Execution;
  */
 public class SamplingBasedClassSimilarity implements ClassSimilarity {
 
-    public int SAMPLING_RATE = 200;
+    public int SAMPLING_RATE = 400;
     public double THRESHOLD = 0.5;
     static Logger logger = Logger.getLogger("LIMES");
 

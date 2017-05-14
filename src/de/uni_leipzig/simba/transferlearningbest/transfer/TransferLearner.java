@@ -26,6 +26,8 @@ import de.uni_leipzig.simba.transferlearningbest.transfer.properties.PropertySim
 import de.uni_leipzig.simba.transferlearningbest.transfer.properties.SamplingBasedPropertySimilarity;
 import de.uni_leipzig.simba.transferlearningbest.util.Execution;
 import de.uni_leipzig.simba.transferlearningbest.util.SparqlUtils;
+
+import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +162,7 @@ public class TransferLearner {
                 if (!new File(folderName.getAbsoluteFile() + "/fixme.txt").exists()) {
                     config = cr.readLimesConfig(folderName.getAbsolutePath() + "/spec.xml");
                     count++;
-                    System.out.println("Processing " + count + ".\t" + config.getName());
+                    System.out.println("Processing " + count + ".\t" + getConfigurationName(config.getName()));
                     String sourceClass = config.source.getClassOfendpoint(true);
                     String targetClass = config.target.getClassOfendpoint(true);
                     Set<String> relevantSourceProperties = new HashSet<>();;
@@ -269,14 +271,15 @@ public class TransferLearner {
     public Map<Configuration, Double> runSimpleMatching(int instanceSampleSize, double coverage) {
         Map<Configuration, Double> results = new HashMap<Configuration, Double>();
         Configuration result;
-        String output = "Specification \t Precision \t Recall \t F-Measure\n";
+        String output = "The results for running the specification with the best configuration's metrics\n";
+        output += "Specification \t Similar Spec. \t Precision \t Recall \t F-Measure\n";
       //PRFComputer prf = new PRFComputer();
         PRFCalculator prf = new PRFCalculator();
         Execution exec = new Execution();
         //iterate over configurations
         for (Configuration config : configurations) {
         	//get the source and target classes
-            System.out.println("Processing " + config.name + ":" + config.source.getClassOfendpoint(true) + " -> " + config.target.getClassOfendpoint(true));
+            System.out.println("Processing " + getConfigurationName(config.name) + "\t[" + config.source.getClassOfendpoint(true) + " -> " + config.target.getClassOfendpoint(true)+"]");
             String sourceClass = config.source.getClassOfendpoint(true);
             String targetClass = config.target.getClassOfendpoint(true);
             
@@ -297,7 +300,7 @@ public class TransferLearner {
             Mapping reference = new Mapping().readNtFile(config.name.replaceAll(Pattern.quote("spec.xml"), "reference.nt"));// the name and file format of references are changed
 
             
-            System.out.println("Running new spec derived from " + result.name + " ...");
+            System.out.println("Running mapping for the most similar spec derived from [" + getConfigurationName(result.name) + "] with all information from the current configuration");
             Mapping transferResult = exec.executeComplex(result);
 
 //            System.out.println("Transfermapping\n");
@@ -307,10 +310,10 @@ public class TransferLearner {
 //            
 
             //output = output + new File(config.name).getParent() + "\t" + prf.computePrecision(transferResult, reference) + "\t" + prf.computeRecall(transferResult, reference) + "\t" + prf.computeFScore(transferResult, reference) + "\n";
-            output = output + new File(config.name).getParent() + "\t" + prf.precision(transferResult, reference) + "\t" + prf.recall(transferResult, reference) + "\t" + prf.fScore(transferResult, reference) + "\n";
+            output = output + getConfigurationName(config.name) + "\t" + getConfigurationName(result.name) + "\t" +prf.precision(transferResult, reference) + "\t" + prf.recall(transferResult, reference) + "\t" + prf.fScore(transferResult, reference) + "\n";
             ConfigAccuracy ca = new ConfigAccuracyWald95();
             double acc = ca.getAccuracy(result, posExamples.get(config), negExamples.get(config));
-            System.out.println(output);
+            //System.out.println(output);
             //add the transfered configuration (learned) and its accuracy
             results.put(result, acc);
             //System.exit(1);
@@ -396,18 +399,23 @@ public class TransferLearner {
 
         // setup
         ConfigAccuracy confAcc = new ConfigAccuracyWald95();
-        ClassSimilarity classSim = new SamplingBasedClassSimilarity();//new LabelBasedClassSimilarity();//new UriBasedClassSimilarity();
-        PropertySimilarity propSim = new SamplingBasedPropertySimilarity();//new UriBasedPropertySimilarity(); 
+        ClassSimilarity classSim = new UriBasedClassSimilarity();//new SamplingBasedClassSimilarity();//new LabelBasedClassSimilarity();//
+        PropertySimilarity propSim =  new UriBasedPropertySimilarity();//new SamplingBasedPropertySimilarity();//
         double bestF = 0;
         Configuration bestConfig = configurations.iterator().next();
         double similarity = -1;
         
+        if(config.name.contains("dbpedia-datagovUK-city"))
+        	similarity=-1;
         //iterate for other configurations
         for (Configuration configuration : configurations) {
             String name1 = configuration.name.trim();
             String name2 = config.name.trim();
             if (!name1.equalsIgnoreCase(name2)) {
-                System.out.println("Processing " + configuration.name);
+            	if(configuration.name.contains("dbpedia-linkedgeodata-country"))
+            		System.out.println(config.name);
+            	
+                System.out.println("Check (" + getConfigurationName(configuration.name)+") similarity to ("+ getConfigurationName(config.name)+")");
                 // accuracy of link specification; // TODO: where to get the positive and negative examples?
                 double alpha = confAcc.getAccuracy(configuration, posExamples.get(configuration), negExamples.get(configuration));
 
@@ -427,7 +435,8 @@ public class TransferLearner {
                 double cTSim = classSim.getSimilarity(targetClass, inputTargetClass, configuration);*/
                 boolean isSource=true;
                 //get the similarity between the input configuration classes and the opponent configuration classes
-
+                
+            	            		
                 double cSSim=classSim.getSimilarity(inputSourceClass, config,sourceClass,configuration,isSource);;
                 double cTSim =classSim.getSimilarity(inputTargetClass,config, targetClass,configuration,!isSource);;
                 
@@ -440,7 +449,15 @@ public class TransferLearner {
                 }
             }
         }
-        System.out.println("Mapping " + config.name + " and " + bestConfig.name + " is " + bestF);
+        if(bestF==0)//no other similar link specification found
+        {
+        	bestConfig = config;
+        	bestF=1;
+        }
+        
+        System.out.println(getConfigurationName(bestConfig.name)+ " most similar configuration to " + getConfigurationName(config.name) +" with similarity =  " + bestF);
+        System.out.println("Read the most similar configuration and replace all its information except IDs and measures (similar properties in measures are replaced) with the one in our hands");
+
         //clone the best config
         bestConfig = new ConfigReader().readLimesConfig(bestConfig.name);
 
@@ -455,6 +472,10 @@ public class TransferLearner {
         Map<String, String> sourcePropertyMapping = getPropertyMap(relevantSourceProperties,inputSourceClass,config,sourceClass,  bestConfig, propSim,  true);
         Map<String, String> targetPropertyMapping = getPropertyMap(relevantTargetProperties,inputTargetClass,config,targetClass, bestConfig, propSim,  false);
 
+        //replace ids
+        bestConfig.source.id =  config.source.id;
+        bestConfig.target.id = config.target.id;
+        
         //replace endpoints
         bestConfig.source.endpoint = config.source.endpoint;
         bestConfig.target.endpoint = config.target.endpoint;
@@ -489,7 +510,7 @@ public class TransferLearner {
         r = bestConfig.target.restrictions.get(0);
         r = r.replaceAll(Pattern.quote(bestConfig.target.getClassOfendpoint()), "<" + inputTargetClass + ">");
         bestConfig.target.restrictions.set(0, r);
-        resultBuffer = resultBuffer + config.name + "\t" + bestConfig.name + "\t"
+        resultBuffer = resultBuffer + getConfigurationName(config.name) + "\t" + getConfigurationName(bestConfig.name) + "\t"
                 + bestF + "\t" + bestConfig.source.getClassOfendpoint()
                 + "\t" + bestConfig.target.getClassOfendpoint() + "\t" + bestConfig.measure + "\n";
 
@@ -831,5 +852,10 @@ public class TransferLearner {
 			System.out.println("---------------------------------------------------------------");
 		}
     	
+    }
+    public static String getConfigurationName(String fullPath)
+    {
+    	String tmp =fullPath.substring(0,fullPath.lastIndexOf("/"));
+    	return tmp.substring(tmp.lastIndexOf("/")+1, tmp.length());
     }
 }

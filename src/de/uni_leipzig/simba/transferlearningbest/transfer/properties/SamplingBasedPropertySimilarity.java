@@ -26,7 +26,7 @@ import de.uni_leipzig.simba.transferlearningbest.util.Execution;
  */
 public class SamplingBasedPropertySimilarity implements PropertySimilarity {
 
-    public int SAMPLING_RATE = 200;
+    public int SAMPLING_RATE = 400;
     public double THRESHOLD = 0.5;
     public static Map<String, String> prefixes = new HashMap<String, String>();
     static Logger logger = Logger.getLogger("LIMES");
@@ -197,7 +197,7 @@ public class SamplingBasedPropertySimilarity implements PropertySimilarity {
     }
 
     public static String expand(String property, Configuration config) {
-    	
+
         if(property.startsWith("http")) return property;
         //to handle propert1/property2 case
         if(property.contains(":") && property.contains("/") && property.lastIndexOf(":") > property.lastIndexOf("/")) // dbpedia:director/rdfs:label OR property.lastIndexOf(":") != property.indexOf(":") two occurences

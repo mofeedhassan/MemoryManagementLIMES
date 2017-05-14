@@ -188,7 +188,7 @@ public class ConfigReader {
                 @Override
                 public InputSource resolveEntity(String publicId, String systemId)
                         throws SAXException, IOException {
-                    System.out.println(systemId);
+                    //System.out.println(systemId);
                     if (systemId.contains("limes.dtd")) {
                         String dtd = System.getProperty("user.dir")+"/resources/limes.dtd";
                         return new InputSource(dtd);

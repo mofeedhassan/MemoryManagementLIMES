@@ -24,8 +24,11 @@ import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
 import de.uni_leipzig.simba.memorymanagement.io.Write;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.LazyTspComponents;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.graphPertitioner;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.coarseners.HEV;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.coarseners.HEVSortedNodes;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.primary.MGraph;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.primary.MGraph2;
+import de.uni_leipzig.simba.memorymanagement.lazytsp.graphPartitioning.primary.MGraph3;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.PLTSP.LTSPMain;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP.ParallelController;
 import de.uni_leipzig.simba.memorymanagement.lazytsp.parallel.RefactoredPLTSP.ParallelMain;
@@ -327,6 +330,51 @@ public class PLTSPPMain {
 			g.displayGraph(g.coarsenedNodeWeights, g.coarsenedEdgesWeights);
 		
 	   }
+	   
+	   public static void runExperimentTestCoarseningG3 (LazyTspComponents pParameters, ParametersProcessor pp)
+	   {
+		    ResultsRuntimes rr = new ResultsRuntimes();
+		    
+		    rr.setExperiementStart(System.currentTimeMillis());
+		    
+		    Hr3Indexer hr3 = new Hr3Indexer(alpha, pParameters.getThreshold()); // in future make its factory
+			hr3.endColumn = 2;
+			hr3.baseFolder=pp.getParameter(ParameterType.BASEFOLDER);
+			
+			///////start indexing
+			rr.setPhaseStart(System.currentTimeMillis());
+			hr3.runIndexing(new File(dataFile), true);
+			rr.setPhaseInterval("indexing", System.currentTimeMillis());
+			
+			/////// create graph
+			rr.setPhaseStart(System.currentTimeMillis());
+			Graph graph = hr3.generateTaskGraph();
+			rr.setPhaseInterval("graph", System.currentTimeMillis());
+
+			iterations = 0; // doese it change so you need to reset
+			///start graph clustering
+			rr.setPhaseStart(System.currentTimeMillis());
+			Map<Integer, Cluster> clusters = pParameters.getClustering().cluster(graph, pParameters.getCapacity()); //--> parameters.clustering.cluster(g,parameters.capacity)
+			//each cluster represents a mapping task = a set of itemindex
+			rr.setPhaseInterval("clustering", System.currentTimeMillis());
+			System.out.println("clusters");
+
+			System.out.println(clusters);
+			///partition clusters
+			MGraph3 g = new MGraph3();
+			
+			g.createFineGraph(clusters);
+			
+			System.out.println("fine graph");
+			g.displayGraph(g.nodeWeights, g.edgesWeights);
+			
+			System.out.println("coarsened graph");
+			HEV coarsener= new HEVSortedNodes(g);
+			MGraph3 result = coarsener.coarsen();
+			result.displayGraph(result.coarsenedNodeWeights, result.coarsenedEdgesWeights);
+		
+	   }
+	   
 	public static void main(String[] args) {
 
 		initializeLogger();
@@ -349,7 +397,7 @@ public class PLTSPPMain {
 			PLTSPPMain driver = new PLTSPPMain();
 			
 			//driver.runExperiment(experiementComponents,paramters);
-			driver.runExperimentTestCoarsening(experiementComponents, paramters);
+			driver.runExperimentTestCoarseningG3(experiementComponents, paramters);
 		}
 		else if(option.equals(String.valueOf(OperationType.EXT)))
 		{
