@@ -1,7 +1,7 @@
 To run the experiments the parameters should be:<br/>
-run
-parameters100
+run <br/>
+parameters100 <br/>
 
-;description
-operation to run experiment
-parameters file in the project folder
+;description <br/>
+operation to run experiment <br/>
+parameters file in the project folder <br/>
