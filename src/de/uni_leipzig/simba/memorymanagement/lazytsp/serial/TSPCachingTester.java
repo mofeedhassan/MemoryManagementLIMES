@@ -33,24 +33,21 @@ import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Cluster;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Clustering;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.ClusteringFactory;
 import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.Graph;
-import de.uni_leipzig.simba.memorymanagement.Index.graphclustering.NaiveClustering;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.DataManipulationCommand;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPPlanner;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.TSPSolver;
 import de.uni_leipzig.simba.memorymanagement.Index.planner.execution.CacheAccessExecution;
-//import de.uni_leipzig.simba.memorymanagement.TSPSolver.GreedySolver;
-import de.uni_leipzig.simba.memorymanagement.datacache.AbstractCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCache;
 import de.uni_leipzig.simba.memorymanagement.datacache.DataCacheFactory;
-import de.uni_leipzig.simba.memorymanagement.datacache.SimpleCache;
 import de.uni_leipzig.simba.memorymanagement.indexing.Hr3Indexer;
-import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexItem;
 import de.uni_leipzig.simba.memorymanagement.indexing.TrigramIndexer;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.PathFinder;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SimpleSolver;
 import de.uni_leipzig.simba.memorymanagement.pathfinder.SolverFactory;
 import de.uni_leipzig.simba.memorymanagement.structure.CacheType;
 import de.uni_leipzig.simba.memorymanagement.structure.ClusteringType;
+import de.uni_leipzig.simba.memorymanagement.structure.DataType;
+import de.uni_leipzig.simba.memorymanagement.structure.RuningPartType;
 import de.uni_leipzig.simba.memorymanagement.structure.SolverType;
 
 /**
@@ -76,39 +73,36 @@ public class TSPCachingTester {
 	static java.util.logging.Logger logger = Logger.getLogger("LIMES"); 
 
 
-	static List<Double> thresholds= new ArrayList<Double>();
-	static List<Integer> capcities= new ArrayList<Integer>();
-	static List<String> caches= new ArrayList<String>();
-	static List<String> clusters= new ArrayList<String>();
-	static List<String> solvers= new ArrayList<String>();
-
-	static List<String> runingInfo= new ArrayList<String>();// storing running times for each section of code: indexer, clustering, TSP, caching
-	static String InfoPiece="";//piece of run information
-
-	static int repeats=5;// number of repetitions
-	static String type= "integer";// (integer,string) = > (HR3,Trigrams)
-	static String dataFile="";// the file's path contains the data
-	static String resultsFile="";//the results' fiels naming
-	static String resultsFolder="";// the results of the run
-	static String runsInfoFolder="";//where run information data are recorded in it
+	static List<Double> thresholds= new ArrayList<Double>(); //Threshold: used by HR3 algorithm to specify which space tiling squares to be compared to the current square
+	static List<Integer> capcities= new ArrayList<Integer>();//Capacity: The data cache capacity, set of capacities used
+	static List<String> caches= new ArrayList<String>(); //Type of data cache (FIFO,LFU,...)
+	static List<String> clusters= new ArrayList<String>(); //Cluster: Clustering algorithm used in Lazy TSP
+	static List<String> solvers= new ArrayList<String>(); //Solvers: Solver algorithm used in Lazy TSP
+	static int repeats=5;  // Number of experiment repetitions
+	static DataType dataType = DataType.ECULIDEAN; // type of data either integers/lat. and long. => measure is eculidean or strings/labels => measure trigrams
+	static RuningPartType partToRun = RuningPartType.APPROACH; // what parts to run in single experiement (base algorithm, the approach algorithm/LazyTsp, Both)
+	static boolean recordSectionsRunningTimes =false;
+	static boolean displayInfoOnce =true;
+	static int alpha=4;// used by HR3 algorithm
+	static double optimTime=100; // used by one of the solvers algorithms
+	static int iterations =0; // used by one of the solvers algorithms
+	
+	static String dataFile="";// The path of file that contains the data
+	static String resultsFile="";//The name of the file where results are stored
+	static String resultsFolder="";// The folder where result files are stored
+	static String runsInfoFolder="";//where running information data are recorded in it
 	static String resultsFinalFolder="";//for extracting the required columns for plotting
-	static int whatToRun=0;// which part to run (2,1,0)=>(approach,baseline,both)
+	static String baseFolder=""; //used for tiling space
+	static List<String> runingInfo= new ArrayList<String>();// storing running times for each section of code: indexer, clustering, TSP, caching
+	static String InfoPiece="";//piece of run information that accumulated forming record of runningInfo
 	static int targetCol=1;
-	static double optimTime=100;
 
-
-	static boolean recordTimes =false;
-	static boolean displayOnce =true;
-
-	static String baseFolder="";
-	static int alpha=4;
-	static int iterations =0;
 	static Map<Integer,String> resultsFiles= new HashMap<Integer,String> ();
 	static String currentDirectory="";
 
 /*	run
-	/media/mofeed/A0621C46621C24164/CachingTests/parameters100
-	/media/mofeed/A0621C46621C24164/CachingTests/resultsHR3100
+	parameters100
+	resultsHR3100
 	1
 	true*/
 	public static void main(String args[]) {
@@ -133,16 +127,16 @@ public class TSPCachingTester {
 			logger.log(Level.SEVERE, "Error occur in FileHandler.", exception);
 		}
         
-		
+		//get current folder
 		currentDirectory = System.getProperty("user.dir");
-		currentDirectory = standardizePath(currentDirectory);
-		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDirectory;
+		currentDirectory = standardizePath(currentDirectory); //put folder path in standard form by ensuring it ends with / 
+		resultsFolder = runsInfoFolder = resultsFinalFolder = currentDirectory; // all in the same folder
 		
-		//resultsFolder = runsInfoFolder = resultsFinalFolder = System.getProperty("user.dir");
-		resultsFile = resultsFolder+"/Cache";
+		resultsFile = resultsFolder+"/Cache"; // each result file has prefix "Cache"
 
-		String option  = args[0];
-		if(option.equals("run"))
+		String option  = args[0]; //two options exist, either run the experiment or extract information from results
+		
+		if(option.equals("run")) // run experiment
 		{
 			if(args.length < 2)
 			{
@@ -150,12 +144,14 @@ public class TSPCachingTester {
 				System.exit(1);
 			}
 			System.out.println("Starting run");
-			initializeExperimentParameters(args[1]);
+			
+			initializeExperimentParameters(args[1]); //read experiment parameters from file "parameters100"
 			resultsFolder = standardizePath(resultsFolder);
 			resultsFile=resultsFolder+"Cache";
-			displayRunParameters();
+			displayRunParameters();// display parameters the experiment runs with them
+			
 			TSPCachingTester tsp = new TSPCachingTester();
-			tsp.runExperiemment();
+			tsp.runExperiemment(); //run experiment
 		}
 		else if(option.equals("extract"))
 		{
@@ -179,110 +175,42 @@ public class TSPCachingTester {
 		else
 			System.out.println("Wrong operation option (run/exract)");
 	}
-/*	public static void main(String args[]) {
-		Logger.getLogger("ac.biu.nlp.nlp.engineml").setLevel(Level.OFF);
-		Logger.getLogger("org.BIU.utils.logging.ExperimentLogger").setLevel(Level.OFF);
-		Logger.getRootLogger().setLevel(Level.OFF);
-		resultsFolder = runsInfoFolder = resultsFinalFolder = System.getProperty("user.dir");
-		resultsFile = resultsFolder+"/Cache";
 
-		String option  = args[0];
-		if(option.equals("run"))
-		{
-			if(args.length < 2)
-			{
-				System.out.println("parameters for run are: [1] path to parameters file \n [2] path to results folder \n");
-				System.exit(1);
-			}
-			System.out.println("Starting run");
-			initializeExperimentParameters(args[1]);
-			resultsFolder = standardizePath(resultsFolder);
-			resultsFile=resultsFolder+"Cache";
-			displayRunParameters();
-			runExperiemment();
-		}
-		else if(option.equals("extract"))
-		{
-			if(args.length != 4)
-			{
-				System.out.println("parameters for extract are: [1] path to results folder \n [2] column to extract {base line: 2 time, 3 hits, 4 misses / approach: 6 time, 7 hits, 8 misses} \n [3] path to final extractions");
-				System.exit(1);
-			}
-			System.out.println("Starting data extraction");
-
-			resultsFolder = standardizePath(args[1]);
-			targetCol =Integer.parseInt(args[2]);
-			resultsFinalFolder =standardizePath(args[3]);
-			List<String> res = extractResults("/media/mofeed/A0621C46621C24164/03_Work/CachingProject/Experiement/testResults/ServerTestHR3/8"resultsFolder, targetCol);
-			for (String lines : res) {
-				System.out.println(lines);
-			}
-			initializeFilesNames();
-			wrtieToFile(res, resultsFinalFolder+"/"+resultsFiles.get(targetCol));
-		}
-		else
-			System.out.println("Wrong operation option (run/exract)");
-	}*/
-	public static void displayRunParameters()
+	private  void runExperiemment()
 	{
-		System.out.println("The program will run with parameteres:");
-		System.out.println("Data path: "+dataFile);
-		System.out.println("Results Folder path: "+resultsFolder);
-		System.out.println("Results files prefixes: "+resultsFile);
-		System.out.println("Base Foder path: "+baseFolder);
-		System.out.println("Folder for steps run times: "+runsInfoFolder);
-		System.out.println("Record steps times (y/n): "+recordTimes);
-		System.out.println("Thresholds: "+thresholds);
-		System.out.println("Capacities: "+capcities);
-		System.out.println("Clusters: "+clusters);
-		System.out.println("Solvers: "+solvers);
-		System.out.println("Optimization Time: "+optimTime);
-		System.out.println("Optimization Time: "+iterations);
-		System.out.println("Caches: "+caches);
-		System.out.println("Repeats number: "+repeats);
-		System.out.println("Integer/String(HR3,Trigram): "+type);
-		System.out.println("Run base/approach/both(1,2,0): "+whatToRun);
-	}
-	public static String standardizePath(String originalPath)
-	{
-		if(!originalPath.endsWith("/"))
-			originalPath+="/";
-		return originalPath;
-	}
-	private /*static*/ void runExperiemment()
-	{
-		long begin=0,end=0,InfoBegin=0;
-		List<DataManipulationCommand> plan=null;
-		DataCache dataCache=null;
-		CacheAccessExecution cae=null;
-		TSPPlanner planner =null;
-		Graph g=null;
-		String label="";
+		long begin=0,end=0,InfoBegin=0; // values to record the strat and begin of a running phase time such as clustering the data, the solver action
+		List<DataManipulationCommand> plan=null; // plan's commands provided by solver algorithm, It specifies the sequence of command to work with data such as load, compare and remove 
+		DataCache dataCache=null; // data cache (e.g.FIFO)
+		CacheAccessExecution cae=null; // executes plan over the data cache => load, compare if exist, remove to free space
+		TSPPlanner planner =null; // The planner that uses the solvers to create the plan
+		Graph g=null; // the graph representing the data
 		String commonInfo="";
 		String typeLabel="";
-		if(type.equals("integer"))
-			typeLabel="HR3";
+		if(dataType == DataType.ECULIDEAN)
+			typeLabel="Ecu";
 		else
 			typeLabel="Tri";
-		for(String cluster:clusters){ //pick a cluster
-			for(String solver:solvers){ //pick a solver
-				for(String cache:caches){ //pick a cache
+		for(String cluster:clusters){ //pick a cluster of the list in case of more than one algorithm to be used
+			for(String solver:solvers){ //pick a solver of the list in case of more than one algorithm to be used
+				for(String cache:caches){ //pick a cache of the list in case of more than one cache to be used
 					List<String> results= null; // intitalize the results list
 					String cache_type=null;
 					cache_type = cache;
-					for (Double threshold : thresholds) {//pick a threshold
+					
+					for (Double threshold : thresholds) {//apply set of algorithms on different thresholds' values
 						results= new ArrayList<String>(); 
 						results.add("Capacity\tRuntime\tHits\tMisses\n");
 	//					System.out.println("Capacity\tRuntime\tHits\tMisses");
 						String titles="What\tCapacity\tIndexing\tGraph\tClustering\tClustersNo\tPath\tPlan\tMappings\tPlanExec\n";
 						runingInfo.add(titles);
-						for (Integer capacity : capcities) {// pick a capacity
+						for (Integer capacity : capcities) {// assign a capacity to the used data cache
 							String line="";
-							for(int i=0; i< repeats; i++)// do the repeats
+							for(int i=0; i< repeats; i++)// number of times to repeat the experiments with the formed collection of parameters and algorithms
 							{
 								InfoPiece="";
 								commonInfo=capacity+"\t";
-								if(type.equals("integer"))
+								//if(type.equals("integer"))
+								if(dataType == DataType.ECULIDEAN)// data is lat/long and it uses eculidean measure
 								{
 									//InfoPiece="BaseLine:/";
 									/// create Hr3 indexer
@@ -308,7 +236,8 @@ public class TSPCachingTester {
 									logger.info(Thread.currentThread().getName()+":"+ getClass().getName()+":"+(getLineNumber()-1)+":call():object planner is created:"+ System.currentTimeMillis());
 
 									////////////////////////////------------Base Line (without TSP)-------------------------------////////////////////////////
-									if(whatToRun == 1 || whatToRun == 0)//1:base , 0: both
+
+									if(partToRun == RuningPartType.BASE || partToRun == RuningPartType.BOTH)// not used for the parallelization paper
 									{
 										//start baseline
 										/// start creating plan with load,flush,get
@@ -329,7 +258,7 @@ public class TSPCachingTester {
 										InfoPiece+=numberOfMappings+"\t";
 										end = System.currentTimeMillis();
 										InfoPiece+=(end-InfoBegin)+"\n";
-										if(displayOnce)
+										if(displayInfoOnce)
 										{
 											System.out.println(titles);
 											System.out.println(InfoPiece);
@@ -341,15 +270,16 @@ public class TSPCachingTester {
 										System.out.print(dataCache.getHits() + "\t");
 										System.out.print(dataCache.getMisses() + "\t");
 										line="Baseline (" + capacity + ")\t" + "\t"+(end - begin) + "\t"+dataCache.getHits() + "\t"+dataCache.getMisses();
-										if(whatToRun == 1)
+										if(partToRun == RuningPartType.BASE)
 											line+= "\n";
 										else//0
 											line+= "\t";
 									}
 									////////////////////////////------------Approach-------------------------------////////////////////////////
-									if(whatToRun == 2 || whatToRun == 0)//2:approach , 0: both
+
+									if(partToRun == RuningPartType.APPROACH || partToRun == RuningPartType.BOTH)
 									{
-										if(whatToRun == 0)
+										if(partToRun == RuningPartType.BOTH)
 											InfoPiece="";
 										begin = System.currentTimeMillis();
 										iterations = 0;
@@ -362,30 +292,11 @@ public class TSPCachingTester {
 										logger.info(Thread.currentThread().getName()+":"+getClass().getName()+":"+(getLineNumber()-1)+":runExperiments(): clustering leads to #clusters = "+clusters.size()+" :"+ System.currentTimeMillis());
 
 										InfoPiece="Approach\t" +commonInfo +(System.currentTimeMillis()-InfoBegin)+"\t"+clusters.size()+"\t";
-										if(displayOnce)
+										if(displayInfoOnce)
 											System.out.println(InfoPiece);
 
 										///create path
 										InfoBegin = System.currentTimeMillis();
-
-										/*					                TSPSolver tsp = new TSPSolver();
-					                int[] path = tsp.getPath(tsp.getMatrix(clusters), iterations);*/
-
-										/// execute the TSP greedy solver
-										/*   GreedySolver gs = new GreedySolver();
-					                List<Integer> pathList = gs.getPath(clusters);
-					                int[] path = new int[pathList.size()];
-					                for (int x = 0; x < pathList.size(); x++) {
-					                    path[x] = pathList.get(x);
-					                }*/
-/*										SimpleSolver.optimizationTime = optimTime;
-										PathFinder gs = new SimpleSolver();
-										List<Integer> pathList = gs.getPath(clusters);
-										int[] path = new int[pathList.size()];
-										for (int k = 0; k < pathList.size(); k++) {
-											path[k] = pathList.get(k);
-										}*/
-										
 										PathFinder theSolver = SolverFactory.createSolver(SolverType.valueOf(solver));// get solver
 										SimpleSolver.optimizationTime = optimTime;// incase it is simple solver otherwise it will take the default
 										TSPSolver.iterations = iterations;// in case it is TSP solver, otherwise the default is set inside the class- To change you need to do that from code
@@ -412,7 +323,7 @@ public class TSPCachingTester {
 										InfoPiece+=numberOfMappings+"\t";
 										end = System.currentTimeMillis();
 										InfoPiece+=(end-InfoBegin)+"\n";
-										if(displayOnce)
+										if(displayInfoOnce)
 										{
 											System.out.println(titles);
 											System.out.println(InfoPiece);
@@ -420,7 +331,7 @@ public class TSPCachingTester {
 										runingInfo.add(InfoPiece);
 										InfoPiece="";
 										/////////////////////overall info
-										if(whatToRun == 2)
+										if(partToRun == RuningPartType.APPROACH)
 											line=capacity + "\t"+(end - begin) + "\t"+dataCache.getHits() + "\t"+dataCache.getMisses() + "\n";
 										else//0
 											line+=capacity + "\t"+(end - begin) + "\t"+dataCache.getHits() + "\t"+dataCache.getMisses() + "\n";
@@ -433,13 +344,14 @@ public class TSPCachingTester {
 										System.out.println(line);
 									}
 								}
-								else if(type.equals("string"))
+								//else if(type.equals("string"))
+								else if(dataType == DataType.TRIGRAMS)	
 								{
 									TrigramIndexer tix = new TrigramIndexer(threshold);
 									tix.endColumn = 2;
 									tix.baseFolder=baseFolder;
 
-									///////start indexing
+									///////start indexing the data
 									InfoBegin = System.currentTimeMillis();
 									tix.runIndexing(new File(dataFile), true);
 									commonInfo+=(System.currentTimeMillis()-InfoBegin)+"\t";
@@ -451,18 +363,20 @@ public class TSPCachingTester {
 									commonInfo+=(System.currentTimeMillis()-InfoBegin)+"\t";
 
 									// runingInfo.add(commonInfo);
+									
 									///create planner object
 									planner = new TSPPlanner();
 
 									////////////////////////////------------Base Line (without TSP)-------------------------------////////////////////////////
-									if(whatToRun == 1 || whatToRun == 0)//1:base , 0: both
+
+									if(partToRun == RuningPartType.BASE || partToRun == RuningPartType.BOTH) // not used for the parallelization paper
 									{
 										//start baseline
 										/// start creating plan with load,flush,get
 										begin = System.currentTimeMillis();
 										plan = planner.plan(g);
 										InfoPiece="BaseLine:/" +commonInfo +"\tNA\tNA\tNA\t"+(System.currentTimeMillis()-begin)+"\t";
-										if(displayOnce)
+										if(displayInfoOnce)
 											System.out.println(InfoPiece);
 										///create the cache
 										dataCache = DataCacheFactory.createCache(CacheType.valueOf(cache), Integer.MAX_VALUE, 1,capacity); // new SimpleCache(capacity);
@@ -474,7 +388,7 @@ public class TSPCachingTester {
 										InfoPiece+=numberOfMappings+"\t";
 										end = System.currentTimeMillis();
 										InfoPiece+=(end-InfoBegin)+"\n";
-										if(displayOnce)
+										if(displayInfoOnce)
 										{
 											System.out.println(titles);
 											System.out.println(InfoPiece);
@@ -487,15 +401,16 @@ public class TSPCachingTester {
 										System.out.print(dataCache.getHits() + "\t");
 										System.out.print(dataCache.getMisses() + "\t");
 										line="Baseline (" + capacity + ")\t" + "\t"+(end - begin) + "\t"+dataCache.getHits() + "\t"+dataCache.getMisses();
-										if(whatToRun == 1)
+										if(partToRun == RuningPartType.BASE)
 											line+= "\n";
 										else//0
 											line+= "\t";
 									}
 									////////////////////////////------------Approach-------------------------------////////////////////////////
-									if(whatToRun == 2 || whatToRun == 0)//2:approach , 0: both
+									//if(whatToRun == 2 || whatToRun == 0)//2:approach , 0: both
+									if(partToRun == RuningPartType.APPROACH || partToRun == RuningPartType.BOTH)
 									{
-										if(whatToRun == 0)
+										if(partToRun == RuningPartType.BOTH)
 											InfoPiece="";
 										begin = System.currentTimeMillis();
 										iterations = 0;
@@ -506,7 +421,9 @@ public class TSPCachingTester {
 										InfoBegin = System.currentTimeMillis();
 										Map<Integer, Cluster> clusters = gc.cluster(g, capacity);
 										InfoPiece="Approach\t" +commonInfo +(System.currentTimeMillis()-InfoBegin)+"\t"+clusters.size()+"\t";
-										///create path
+										
+										///create path that specifies how to move from node to another where each node represents a comparison between 
+										//a tiling square with its neighbors within the threshold
 										InfoBegin = System.currentTimeMillis();
 
 										PathFinder theSolver = SolverFactory.createSolver(SolverType.valueOf(solver));// get solver
@@ -514,32 +431,15 @@ public class TSPCachingTester {
 										TSPSolver.iterations = iterations;// in case it is TSP solver, otherwise the default is set inside the class- To change you need to do that from code
 										
 										int[] path = theSolver.getPath(clusters);
-/*										TSPSolver tsp = new TSPSolver();
-						                int[] path = tsp.getPath(tsp.getMatrix(clusters), iterations);*/
-
-										/*					                
-										GreedySolver gs = new GreedySolver();
-						                List<Integer> pathList = gs.getPath(clusters);
-						                int[] path = new int[pathList.size()];
-						                for (int x = 0; x < pathList.size(); x++) {
-						                    path[x] = pathList.get(x);
-						                }*/
-
-/*										SimpleSolver.optimizationTime = optimTime;
-										PathFinder gs = new SimpleSolver();
-										List<Integer> pathList = gs.getPath(clusters);
-										int[] path = new int[pathList.size()];
-										for (int k = 0; k < pathList.size(); k++) {
-											path[k] = pathList.get(k);
-										}*/
 
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
 
-										/// create and execution plan
+										/// create the execution plan
 										InfoBegin = System.currentTimeMillis();
 										plan = planner.plan(clusters, path);
 										InfoPiece+=(System.currentTimeMillis()-InfoBegin)+"\t";
-											///create cache
+										
+										///create cache
 										dataCache = DataCacheFactory.createCache(CacheType.valueOf(cache), Integer.MAX_VALUE, 1,capacity);  //new SimpleCache(capacity);
 										cae = new CacheAccessExecution(dataCache, plan, new TrigramMeasure(), threshold, tix);
 
@@ -549,7 +449,7 @@ public class TSPCachingTester {
 										InfoPiece+=numberOfMappings+"\t";
 										end = System.currentTimeMillis();
 										InfoPiece+=(end-InfoBegin)+"\n";
-										if(displayOnce)
+										if(displayInfoOnce)
 										{
 											System.out.println(titles);
 											System.out.println(InfoPiece);
@@ -558,7 +458,7 @@ public class TSPCachingTester {
 										InfoPiece="";
 
 										/////////////////////overall info
-										if(whatToRun == 2)
+										if(partToRun == RuningPartType.APPROACH)
 											line=capacity + "\t"+(end - begin) + "\t"+dataCache.getHits() + "\t"+dataCache.getMisses() + "\n";
 										else//0
 											line+=capacity + "\t"+(end - begin) + "\t"+dataCache.getHits() + "\t"+dataCache.getMisses() + "\n";
@@ -571,7 +471,7 @@ public class TSPCachingTester {
 								}
 								//after finishing with string or integer
 								results.add(line);
-								displayOnce =false;
+								displayInfoOnce =false;
 							}//repeats
 							//results.add(line);
 
@@ -580,7 +480,7 @@ public class TSPCachingTester {
 						System.out.println("================================================================");
 						System.out.println(resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster);
 
-						if(recordTimes)
+						if(recordSectionsRunningTimes)
 							wrtieToFile(runingInfo,runsInfoFolder+typeLabel+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver);
 						wrtieToFile(results,resultsFile+"_"+threshold+"_"+cache_type+"_"+cluster+"_"+solver+typeLabel);
 						runingInfo.clear();
@@ -590,6 +490,142 @@ public class TSPCachingTester {
 		}//cluster
 
 	}
+	
+	
+	
+	/**
+	 * Reads the experiments parameters from the specified file
+	 * @param fileName
+	 */
+	private static void initializeExperimentParameters(String fileName)
+	{
+		List<String> rawParameters = readFromFile(fileName); // read parameters' file
+		String split[];
+		for (String rawParameter : rawParameters) {
+			if(rawParameter.toLowerCase().startsWith("thresholds"))
+			{
+				split = rawParameter.split(":");
+				for(int i=1;i<split.length;i++)
+					thresholds.add(Double.parseDouble(split[i]));
+			}
+			else if(rawParameter.toLowerCase().startsWith("capacities")) // set of capacities used by data cache
+			{
+				split = rawParameter.split(":");
+				int  min=Integer.parseInt(split[1]);
+				int max = Integer.parseInt(split[2]);
+				int factor = Integer.parseInt(split[3]);
+				for(int i=min;i<=max;i*=factor)
+					capcities.add(i);
+			}
+			else if(rawParameter.toLowerCase().startsWith("repeats"))// experiment's repetition
+			{
+				split = rawParameter.split(":");
+				repeats = Integer.parseInt(split[1]);
+
+			}
+			else if(rawParameter.toLowerCase().startsWith("type")) // Integer, String
+			{
+				split = rawParameter.split(":");
+				//type =  split[1];
+				dataType = DataType.valueOf(split[1].toUpperCase());
+
+			}
+			else if(rawParameter.toLowerCase().startsWith("data"))
+			{
+				split = rawParameter.split(":");
+				dataFile = currentDirectory +split[1];
+
+			}
+			else if(rawParameter.toLowerCase().startsWith("caches")) // caches types
+			{
+				split = rawParameter.split(":");
+				for(int i=1;i<split.length;i++)
+					caches.add(split[i]);
+
+			}
+			else if(rawParameter.toLowerCase().startsWith("results"))
+			{
+				split = rawParameter.split(":");
+				//resultsFile = split[1];
+				resultsFolder = currentDirectory + split[1];
+				if(!resultsFolder.endsWith("/"))
+					resultsFolder+="/";
+			}	
+			else if(rawParameter.toLowerCase().startsWith("basefolder"))
+			{
+				split = rawParameter.split(":");
+				baseFolder = currentDirectory+split[1];
+				if(!baseFolder.endsWith("/"))
+					baseFolder+="/";
+
+			}
+			else if(rawParameter.toLowerCase().startsWith("clusters"))
+			{
+				split = rawParameter.split(":");
+				for(int i=1;i<split.length;i++)
+					clusters.add(split[i]);
+
+			}
+			else if(rawParameter.toLowerCase().startsWith("solvers"))
+			{
+				split = rawParameter.split(":");
+				for(int i=1;i<split.length;i++)
+					solvers.add(split[i]);
+
+			}	
+			else if(rawParameter.toLowerCase().startsWith("infofolder"))
+			{
+				split = rawParameter.split(":");
+				runsInfoFolder=	currentDirectory + split[1];
+				if(!runsInfoFolder.endsWith("/"))
+					runsInfoFolder+="/";
+			}	
+			else if(rawParameter.toLowerCase().startsWith("part")) //base,approach, both
+			{
+				split = rawParameter.split(":");
+				partToRun= RuningPartType.valueOf(split[1].toUpperCase());
+			}	
+			else if(rawParameter.toLowerCase().startsWith("recordtimes")) // flag to record results or not
+			{
+				split = rawParameter.split(":");
+				recordSectionsRunningTimes=	Boolean.parseBoolean(split[1]);
+			}
+			else if(rawParameter.toLowerCase().startsWith("optimtime"))
+			{
+				split = rawParameter.split(":");
+				optimTime=	Double.parseDouble(split[1]);
+			}
+			else if(rawParameter.toLowerCase().startsWith("iterations"))
+			{
+				split = rawParameter.split(":");
+				iterations=	Integer.parseInt(split[1]);
+			}
+
+		}
+	}
+	
+	
+	public static void displayRunParameters()
+	{
+		System.out.println("The program will run with parameteres:");
+		System.out.println("Data path: "+dataFile);
+		System.out.println("Results Folder path: "+resultsFolder);
+		System.out.println("Results files prefixes: "+resultsFile);
+		System.out.println("Base Foder path: "+baseFolder);
+		System.out.println("Folder for steps run times: "+runsInfoFolder);
+		System.out.println("Record steps times (y/n): "+recordSectionsRunningTimes);
+		System.out.println("Thresholds: "+thresholds);
+		System.out.println("Capacities: "+capcities);
+		System.out.println("Clusters: "+clusters);
+		System.out.println("Solvers: "+solvers);
+		System.out.println("Optimization Time: "+optimTime);
+		System.out.println("Optimization Time: "+iterations);
+		System.out.println("Caches: "+caches);
+		System.out.println("Repeats number: "+repeats);
+		System.out.println("Integer/String(HR3,Trigram): "+dataType);
+		System.out.println("Run base/approach/both: "+partToRun);
+	}
+	
 	private static List<String> extractResults(String folder, int col)//2 run times, 3 hits, 4 misses
 	{
 		List<String> files =getAllFiles(folder);// get list of files in the folder
@@ -653,122 +689,17 @@ public class TSPCachingTester {
 		}
 		return files;
 	}
-	private static void initializeExperimentParameters(String fileName)
+	
+	
+	
+	//put folder path in standard form by ensuring it ends with / 
+	public static String standardizePath(String originalPath)
 	{
-		List<String> rawParameters = readFromFile(fileName);
-		String split[];
-		for (String rawParameter : rawParameters) {
-			if(rawParameter.toLowerCase().startsWith("thresholds"))
-			{
-				split = rawParameter.split(":");
-				for(int i=1;i<split.length;i++)
-					thresholds.add(Double.parseDouble(split[i]));
-			}
-			else if(rawParameter.toLowerCase().startsWith("capacities"))
-			{
-				split = rawParameter.split(":");
-				int  min=Integer.parseInt(split[1]);
-				int max = Integer.parseInt(split[2]);
-				int factor = Integer.parseInt(split[3]);
-				for(int i=min;i<=max;i*=factor)
-					capcities.add(i);
-			}
-			else if(rawParameter.toLowerCase().startsWith("repeats"))
-			{
-				split = rawParameter.split(":");
-				repeats = Integer.parseInt(split[1]);
-
-			}
-			else if(rawParameter.toLowerCase().startsWith("type"))
-			{
-				split = rawParameter.split(":");
-				type = split[1];
-
-			}
-			else if(rawParameter.toLowerCase().startsWith("data"))
-			{
-				split = rawParameter.split(":");
-				dataFile = currentDirectory +split[1];
-
-			}
-			else if(rawParameter.toLowerCase().startsWith("caches"))
-			{
-				split = rawParameter.split(":");
-				for(int i=1;i<split.length;i++)
-					caches.add(split[i]);
-
-			}
-			else if(rawParameter.toLowerCase().startsWith("results"))
-			{
-				split = rawParameter.split(":");
-				//resultsFile = split[1];
-				resultsFolder = currentDirectory + split[1];
-				if(!resultsFolder.endsWith("/"))
-					resultsFolder+="/";
-			}	
-			else if(rawParameter.toLowerCase().startsWith("basefolder"))
-			{
-				split = rawParameter.split(":");
-				baseFolder = currentDirectory+split[1];
-				if(!baseFolder.endsWith("/"))
-					baseFolder+="/";
-
-			}
-			else if(rawParameter.toLowerCase().startsWith("clusters"))
-			{
-				split = rawParameter.split(":");
-				for(int i=1;i<split.length;i++)
-					clusters.add(split[i]);
-
-			}
-			else if(rawParameter.toLowerCase().startsWith("solvers"))
-			{
-				split = rawParameter.split(":");
-				for(int i=1;i<split.length;i++)
-					solvers.add(split[i]);
-
-			}	
-			else if(rawParameter.toLowerCase().startsWith("infofolder"))
-			{
-				split = rawParameter.split(":");
-				runsInfoFolder=	currentDirectory + split[1];
-				if(!runsInfoFolder.endsWith("/"))
-					runsInfoFolder+="/";
-			}	
-			else if(rawParameter.toLowerCase().startsWith("part"))
-			{
-				split = rawParameter.split(":");
-				whatToRun= Integer.parseInt(split[1]);
-			}	
-			else if(rawParameter.toLowerCase().startsWith("recordtimes"))
-			{
-				split = rawParameter.split(":");
-				recordTimes=	Boolean.parseBoolean(split[1]);
-			}
-			else if(rawParameter.toLowerCase().startsWith("optimtime"))
-			{
-				split = rawParameter.split(":");
-				optimTime=	Double.parseDouble(split[1]);
-			}
-			else if(rawParameter.toLowerCase().startsWith("iterations"))
-			{
-				split = rawParameter.split(":");
-				iterations=	Integer.parseInt(split[1]);
-			}
-
-		}
+		if(!originalPath.endsWith("/"))
+			originalPath+="/";
+		return originalPath;
 	}
-	private static void displayParameters()
-	{
-		for (Integer capacity : capcities) {
-			System.out.println(capacity);
-		}
-		for (Double threshold : thresholds) {
-			System.out.println(threshold);
-		}
-		System.out.println(repeats);
-		System.out.println(type);
-	}
+	
 	private static List<String> readFromFile(String fileName)
 	{
 		List<String> lines = new ArrayList<String>();
@@ -818,29 +749,6 @@ public class TSPCachingTester {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}}
-	}
-	private static void wrtieToFile2(List<String> results,String fileName)
-	{
-		try{
-			//	String data = " This content will append to the end of the file";
-
-			File file =new File(fileName);
-
-			//if file doesnt exists, then create it
-			if(!file.exists()){
-				file.createNewFile();
-			}
-
-			//true = append file
-			FileWriter fileWritter = new FileWriter(file.getName(),true);
-			BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
-			for (String data : results) {
-				bufferWritter.write(data);
-			}
-			bufferWritter.close();
-		}catch(IOException e){
-			e.printStackTrace();
-		}
 	}
 	public static int getLineNumber() {
 	    return Thread.currentThread().getStackTrace()[2].getLineNumber();
